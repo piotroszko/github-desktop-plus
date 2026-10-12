@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would orphan existing repositories and tokens)
 
 ### Added
+- The activity bar icon now carries a badge with the number of files that have
+  uncommitted changes in the active repository (staged and unstaged counted
+  once), with the repository name in its tooltip; it clears as soon as the tree
+  is clean. The repositories tree is created via `createTreeView` so the badge
+  exists from activation instead of only after the History panel is opened
 - Commit box drafts persist per repository: the summary, description, co-authors
   and ticked files come back after the panel is recreated (view hidden, window
   reloaded) and when switching between repositories. Refreshes never overwrite

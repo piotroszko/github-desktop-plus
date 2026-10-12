@@ -13,6 +13,7 @@ import {
 } from "./adapters/vscode-adapters";
 import { NativeDiffViewer } from "../../core/git/native-diff";
 import { CommitDraftStore } from "../../core/services/commit-draft-store";
+import { ChangesBadge } from "./ports";
 import { TimelineController } from "./timeline-controller";
 import { WebviewHtmlService } from "./services/webview-html.service";
 
@@ -34,6 +35,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager,
     private readonly accounts: AccountManager,
+    private readonly badge: ChangesBadge,
   ) {
     this.drafts = new CommitDraftStore(context.globalState);
     this.htmlService = new WebviewHtmlService(
@@ -64,6 +66,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
       githubApi: new AccountGitHubApi(this.accounts),
       nativeDiff: new VsCodeNativeDiff(new NativeDiffViewer()),
       drafts: this.drafts,
+      badge: this.badge,
     });
 
     webviewView.webview.onDidReceiveMessage((message) =>

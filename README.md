@@ -84,6 +84,7 @@
 - **GitHub integration** for direct repository links and issue creation
 
 ### 📱 **Changes & History Panel**
+- **Activity bar badge** - the icon shows how many files have uncommitted changes in the active repository, and clears when the tree is clean
 - **VS Code Source Control UI** - Exact replica of native source control
 - **Collapsible sections** for staged and unstaged changes
 - **File staging/unstaging** with individual file controls

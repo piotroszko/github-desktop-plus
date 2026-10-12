@@ -6,6 +6,7 @@ import { RemoteStatus } from "./interfaces/repository-snapshot";
 import { MessageRouter } from "./message-router";
 import {
   Browser,
+  ChangesBadge,
   DraftStore,
   GitHubApi,
   NativeDiff,
@@ -57,6 +58,7 @@ export class TimelineController implements Refresher {
       githubApi: GitHubApi;
       nativeDiff: NativeDiff;
       drafts: DraftStore;
+      badge: ChangesBadge;
     },
   ) {
     const { repos, notifier, channel, browser, git, nativeDiff, drafts } = deps;
@@ -227,10 +229,18 @@ export class TimelineController implements Refresher {
 
     if (!snapshot) {
       channel.post({ command: "updateRepository", repository: null });
+      this.deps.badge.update(0, null);
       return;
     }
 
     this.lastRemoteStatus = snapshot.remoteStatus;
+
+    // The activity bar badge mirrors the change list: one per changed file,
+    // cleared as soon as the working tree is clean.
+    this.deps.badge.update(
+      new Set(snapshot.changes.map((change) => change.path)).size,
+      snapshot.repository.name,
+    );
 
     const draftRepo = this.deps.repos.getPrimary();
     channel.post({

@@ -56,6 +56,20 @@ export interface NativeDiff {
 }
 
 /**
+ * @description Reports how many files currently have uncommitted changes, for
+ * the count shown on the extension's activity bar icon.
+ */
+export interface ChangesBadge {
+  /**
+   * @param changedFiles Distinct files with changes (staged or not); `0` clears
+   *   the badge
+   * @param repositoryName Repository the count belongs to, `null` when none is
+   *   open
+   */
+  update(changedFiles: number, repositoryName: string | null): void;
+}
+
+/**
  * @description Persists the commit box draft per repository so it survives the
  * webview being recreated and repository switches.
  */

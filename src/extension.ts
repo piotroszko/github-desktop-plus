@@ -9,6 +9,7 @@ import { RepositoryManager } from "./core/repositories/repository-manager";
 import { GIT_CONTENT_SCHEME, GitContentProvider } from "./core/git/native-diff";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
 import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
+import { RepositoriesViewBadge } from "./ui/tree-views/changes-badge";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
 import { StoredAccount, TrackedRepository } from "./shared/types";
 import { getPrimaryRepository } from "./shared/utils/repo-selection";
@@ -33,10 +34,20 @@ export async function activate(
     repositoryManager,
     accountManager,
   );
+  // The repositories tree is created (rather than just registered) so the
+  // activity bar icon can carry the pending-change count from activation, not
+  // only once the History panel has been opened.
+  const repositoriesView = vscode.window.createTreeView(
+    "githubDesktopPlus.repositories",
+    { treeDataProvider: repositoriesProvider },
+  );
+  const changesBadge = new RepositoriesViewBadge(repositoriesView);
+
   const timelineProvider = new TimelineViewProvider(
     context,
     repositoryManager,
     accountManager,
+    changesBadge,
   );
 
   const refreshAllViews = () => {
@@ -78,10 +89,7 @@ export async function activate(
       "githubDesktopPlus.accounts",
       accountsProvider,
     ),
-    vscode.window.registerTreeDataProvider(
-      "githubDesktopPlus.repositories",
-      repositoriesProvider,
-    ),
+    repositoriesView,
     vscode.window.registerWebviewViewProvider(
       "githubDesktopPlus.timeline",
       timelineProvider,
