@@ -27,11 +27,14 @@
 
 ## 📸 Examples
 
-### Main Interface
-![Main Interface](https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528839314_1.png)
+### Changes and the commit box
+![Changes tab with staged and unstaged sections, the commit box, and a file diff](media/example/changes.png)
 
-### Timeline and Changes View
-![Timeline View](https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528841624_2.png)
+### History, with a commit expanded
+![History tab with a commit expanded to the files it touched](media/example/history.png)
+
+### Choosing the account a repository commits as
+![Account menu showing the commit address of each account](media/example/accounts.png)
 
 
 ---

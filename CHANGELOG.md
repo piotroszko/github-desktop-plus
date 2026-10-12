@@ -5,6 +5,15 @@ All notable changes to the GitHub Desktop for VS Code extension will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- The README's screenshots are now captures of this extension — Changes with the
+  commit box and a real diff, History with a commit expanded to the files it
+  touched, and the account menu showing the address each account commits as.
+  They live in `media/example/` instead of the upstream author's Firebase
+  bucket, and no longer show the upstream extension over their own project
+
 ## [v2.0.0] - 2026-10-12
 
 ### Changed
