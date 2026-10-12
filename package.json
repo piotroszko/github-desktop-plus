@@ -2,7 +2,7 @@
   "name": "github-desktop-plus",
   "displayName": "GitHub Desktop Plus",
   "description": "GitHub Desktop Plus brings GitHub Desktop's complete workflow to VS Code: staged/unstaged change sections, a commit box with draft persistence, branch and sync controls, conflict resolution, stashes and multi-account support.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "publisher": "piotroszko",
   "icon": "media/icon.png",
   "repository": {
