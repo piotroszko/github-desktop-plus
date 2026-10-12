@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Native diff fallback: below ~620px the History panel hides its own diff pane,
+  so clicking a changed file (working tree) or a commit now opens VS Code's own
+  diff editor — `vscode.diff` for one file, the changes editor (`vscode.changes`)
+  for a whole commit. The "before" side is served by this extension's own
+  read-only `github-desktop-git:` documents (`git show <ref>:<path>`), never by
+  the built-in Git extension's private `git:` scheme
 - `GitHub Desktop: Select Account for Repository`: pins a single tracked
   repository to a GitHub account (context menu on the Repositories tree item, or
   the command palette). Pinned repositories fetch/pull/push/publish, push tags,

@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import { RepositoryManager } from "../../../core/repositories/repository-manager";
 import { AccountManager } from "../../../core/accounts/account-manager";
+import { NativeDiffViewer } from "../../../core/git/native-diff";
 import { getPrimaryRepository } from "../../../shared/utils/repo-selection";
 import { TrackedRepository } from "../../../shared/types";
 import { toGitHubWebUrl } from "../../../shared/utils/github-url";
@@ -11,6 +12,7 @@ import { OutboundMessage } from "../messages";
 import {
   Browser,
   GitHubApi,
+  NativeDiff,
   Notifier,
   PullRequestSummary,
   RepositoryContext,
@@ -98,6 +100,34 @@ async function exists(p: string): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * @description {@link NativeDiff} backed by {@link NativeDiffViewer}, which
+ * drives VS Code's built-in diff and changes editors.
+ */
+export class VsCodeNativeDiff implements NativeDiff {
+  constructor(private readonly viewer: NativeDiffViewer) {}
+
+  openWorkingFile(repo: TrackedRepository, filePath: string): Promise<void> {
+    return this.viewer.openWorkingFile(repo.localPath, filePath);
+  }
+
+  openCommitFile(
+    repo: TrackedRepository,
+    hash: string,
+    filePath: string,
+  ): Promise<void> {
+    return this.viewer.openCommitFile(repo.localPath, hash, filePath);
+  }
+
+  openCommit(
+    repo: TrackedRepository,
+    hash: string,
+    files: string[],
+  ): Promise<void> {
+    return this.viewer.openCommit(repo.localPath, hash, files);
   }
 }
 

@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import { AccountManager } from "./core/accounts/account-manager";
 import { RepositoryManager } from "./core/repositories/repository-manager";
+import { GIT_CONTENT_SCHEME, GitContentProvider } from "./core/git/native-diff";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
 import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
@@ -44,6 +45,10 @@ export async function activate(
   };
 
   context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      GIT_CONTENT_SCHEME,
+      new GitContentProvider(),
+    ),
     vscode.window.registerTreeDataProvider(
       "githubDesktop.accounts",
       accountsProvider,

@@ -843,6 +843,12 @@ function selectFile(p) {
   state.selectedCommit = null;
   renderChanges();
   updateLayout();
+  // At narrow widths the diff pane is hidden, so show the change the native
+  // way (VS Code's own diff editor) instead of rendering into an invisible pane.
+  if (document.body.classList.contains("narrow")) {
+    post("openNativeDiff", { filePath: p });
+    return;
+  }
   $("diffHeader").hidden = false;
   $("diffPath").textContent = p;
   $("diffBody").innerHTML = '<div class="diff-meta" style="padding:8px">Loading…</div>';
@@ -963,6 +969,12 @@ function commitRow(c) {
     state.commitDetail = null;
     state.commitFilePath = null;
     renderHistory();
+    // Narrow layout: the detail pane is hidden, so hand the commit to VS Code's
+    // changes editor (every file it touched) instead of an invisible pane.
+    if (document.body.classList.contains("narrow")) {
+      post("openNativeDiff", { hash: c.hash });
+      return;
+    }
     $("diffHeader").hidden = false;
     $("diffPath").textContent = (c.message || "").split("\n")[0];
     $("rightEmpty").hidden = true;

@@ -6,10 +6,12 @@ import { ITimelineViewProvider } from "./interfaces/timeline-view-provider.inter
 import {
   AccountGitHubApi,
   VsCodeBrowser,
+  VsCodeNativeDiff,
   VsCodeNotifier,
   VsCodeWebviewChannel,
   WorkspaceRepositoryContext,
 } from "./adapters/vscode-adapters";
+import { NativeDiffViewer } from "../../core/git/native-diff";
 import { TimelineController } from "./timeline-controller";
 import { WebviewHtmlService } from "./services/webview-html.service";
 
@@ -52,6 +54,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
       git: new AccountGitClientFactory(this.accounts),
       accounts: this.accounts,
       githubApi: new AccountGitHubApi(this.accounts),
+      nativeDiff: new VsCodeNativeDiff(new NativeDiffViewer()),
     });
 
     webviewView.webview.onDidReceiveMessage((message) =>

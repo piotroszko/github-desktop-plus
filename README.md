@@ -132,6 +132,7 @@
 - Each account maintains its own repositories and settings
 
 ### **Visual Git Operations**
+- **Native VS Code diffs**: in a narrow History panel (where the built-in diff pane is hidden) clicking a changed file or a commit opens VS Code's own diff/changes editor instead of rendering into an invisible pane
 - **Commit History**: Timeline view with user avatars and commit details
 - **File Changes**: Click any commit to see detailed file diffs
 - **Branch Management**: Visual branch dropdown with recent/active branches

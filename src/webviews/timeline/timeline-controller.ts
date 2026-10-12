@@ -7,6 +7,7 @@ import { MessageRouter } from "./message-router";
 import {
   Browser,
   GitHubApi,
+  NativeDiff,
   Notifier,
   RepositoryContext,
   Refresher,
@@ -53,9 +54,10 @@ export class TimelineController implements Refresher {
       git: GitClientFactory;
       accounts: AccountManager;
       githubApi: GitHubApi;
+      nativeDiff: NativeDiff;
     },
   ) {
-    const { repos, notifier, channel, browser, git } = deps;
+    const { repos, notifier, channel, browser, git, nativeDiff } = deps;
 
     this.data = new RepositoryDataService(repos, git);
 
@@ -97,6 +99,29 @@ export class TimelineController implements Refresher {
         }
         await repos.setAccount(repo, m.accountId);
         await this.refresh();
+      })
+      .on("openNativeDiff", async (m) => {
+        const repo = repos.getPrimary();
+        if (!repo) {
+          notifier.warn("No repository selected");
+          return;
+        }
+        if (!m.hash) {
+          if (m.filePath) {
+            await nativeDiff.openWorkingFile(repo, m.filePath);
+          }
+          return;
+        }
+        if (m.filePath) {
+          await nativeDiff.openCommitFile(repo, m.hash, m.filePath);
+          return;
+        }
+        const detail = await this.data.getCommitDetail(m.hash);
+        await nativeDiff.openCommit(
+          repo,
+          m.hash,
+          detail.files.map((file) => file.path),
+        );
       })
       .on("addLocalRepository", async () => {
         await repos.addLocal();

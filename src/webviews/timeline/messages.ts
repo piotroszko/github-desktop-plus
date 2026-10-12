@@ -29,6 +29,13 @@ export type InboundMessage =
       /** Account to pin the active repository to; omit to follow the active account. */
       accountId?: string;
     }
+  | {
+      command: "openNativeDiff";
+      /** File to show; omit to show every file `hash` touched. */
+      filePath?: string;
+      /** Commit to show changes for; omit for the working-tree changes. */
+      hash?: string;
+    }
   | { command: "addLocalRepository" }
   | { command: "cloneRepository" }
   | { command: "stageFiles"; files: string[] }

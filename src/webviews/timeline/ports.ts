@@ -32,6 +32,30 @@ export interface RepositoryContext {
 }
 
 /**
+ * @description Opens changes in VS Code's own diff editors (`vscode.diff` for
+ * one file, `vscode.changes` for several). Used when the timeline's diff pane
+ * is hidden — a narrow panel or a sidebar — so clicking a changed file or a
+ * commit still shows the changes the native way instead of into a pane the user
+ * cannot see.
+ */
+export interface NativeDiff {
+  /** Working tree vs `HEAD` for `filePath`. */
+  openWorkingFile(repo: TrackedRepository, filePath: string): Promise<void>;
+  /** What `hash` changed in `filePath`. */
+  openCommitFile(
+    repo: TrackedRepository,
+    hash: string,
+    filePath: string,
+  ): Promise<void>;
+  /** Every file `hash` touched, in the changes editor. */
+  openCommit(
+    repo: TrackedRepository,
+    hash: string,
+    files: string[],
+  ): Promise<void>;
+}
+
+/**
  * @description Thin abstraction over the user-facing notification surface
  * (`vscode.window.*`). Keeps services free of the `vscode` namespace and
  * trivially mockable in tests.
