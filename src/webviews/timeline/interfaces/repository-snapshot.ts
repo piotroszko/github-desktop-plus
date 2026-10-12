@@ -58,6 +58,3 @@ export interface RepositorySnapshot {
   canUndo: boolean;
   stashes: StashEntry[];
 }
-
-/** Shared page size for commit history queries. */
-export const COMMITS_PAGE_SIZE = 50;

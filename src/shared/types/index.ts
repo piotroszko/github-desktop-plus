@@ -55,6 +55,19 @@ export interface CommitDraft {
 }
 
 /**
+ * @description How commit dates are rendered in the History list: as a coarse
+ * "3 days ago" phrase, or as the wall-clock time git recorded.
+ */
+export type CommitDateFormat = "relative" | "absolute";
+
+/**
+ * @description Where avatars come from. `none` keeps the extension offline:
+ * no `avatar_url` lookup against the GitHub API and no avatar images requested
+ * by the trees or the History list.
+ */
+export type AvatarMode = "github" | "none";
+
+/**
  * @description A commit message produced for the user (by the configured agent
  * CLI, or typed by hand before being read back).
  */

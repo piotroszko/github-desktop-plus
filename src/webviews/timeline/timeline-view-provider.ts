@@ -13,6 +13,7 @@ import {
 } from "./adapters/vscode-adapters";
 import { NativeDiffViewer } from "../../core/git/native-diff";
 import { CommitDraftStore } from "../../core/services/commit-draft-store";
+import { ExtensionSettings } from "../../core/services/settings";
 import { ChangesBadge } from "./ports";
 import { CliCommitMessageGenerator } from "../../core/git/commit-message";
 import { TimelineController } from "./timeline-controller";
@@ -37,6 +38,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     private readonly repositories: RepositoryManager,
     private readonly accounts: AccountManager,
     private readonly badge: ChangesBadge,
+    private readonly settings: () => ExtensionSettings,
   ) {
     this.drafts = new CommitDraftStore(context.globalState);
     this.htmlService = new WebviewHtmlService(
@@ -59,16 +61,25 @@ export class TimelineViewProvider implements ITimelineViewProvider {
 
     this.controller = new TimelineController({
       repos: new WorkspaceRepositoryContext(this.repositories),
-      notifier: new VsCodeNotifier(),
+      notifier: new VsCodeNotifier(
+        () => this.settings().confirm.destructiveActions,
+      ),
       channel: new VsCodeWebviewChannel(webviewView.webview),
       browser: new VsCodeBrowser(),
-      git: new AccountGitClientFactory(this.accounts),
+      git: new AccountGitClientFactory(
+        this.accounts,
+        () => this.settings().git.path,
+      ),
       accounts: this.accounts,
-      githubApi: new AccountGitHubApi(this.accounts),
+      githubApi: new AccountGitHubApi(
+        this.accounts,
+        () => this.settings().ui.avatars === "github",
+      ),
       nativeDiff: new VsCodeNativeDiff(new NativeDiffViewer()),
       drafts: this.drafts,
       badge: this.badge,
       generator: new CliCommitMessageGenerator(),
+      settings: this.settings,
     });
 
     webviewView.webview.onDidReceiveMessage((message) =>

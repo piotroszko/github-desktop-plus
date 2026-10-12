@@ -21,6 +21,7 @@ export class SyncService extends RepositoryScopedService {
     private readonly git: GitClientFactory,
     private readonly channel: WebviewChannel,
     private readonly refresher: Refresher,
+    private readonly remote: () => string,
   ) {
     super(repos, notifier);
   }
@@ -53,7 +54,7 @@ export class SyncService extends RepositoryScopedService {
       const git = this.git.local(repo);
       const { current, tracking } = await git.status();
       await this.git.withAuth(repo, (g) =>
-        tracking ? g.push() : g.push(["-u", "origin", current ?? "HEAD"]),
+        tracking ? g.push() : g.push(["-u", this.remote(), current ?? "HEAD"]),
       );
       this.notifier.info("Pushed to remote");
       await this.refresher.refresh();
@@ -99,7 +100,10 @@ export class SyncService extends RepositoryScopedService {
         this.notifier.error("No remote repository configured");
         return;
       }
-      const remote = remotes[0].name;
+      const configured = remotes.find(
+        (candidate) => candidate.name === this.remote(),
+      );
+      const remote = configured?.name ?? remotes[0].name;
       await this.git.withAuth(repo, (g) => g.push(["-u", remote, current]));
       this.notifier.info(`Published '${current}' to ${remote}`);
       await this.refresher.refresh();

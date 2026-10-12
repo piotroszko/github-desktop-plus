@@ -141,16 +141,29 @@ The Accounts and Repositories views also offer these as context-menu entries.
 
 ## Settings
 
+The Settings UI groups these into categories — **GitHub Desktop Plus**, **Git**,
+**History**, **Interface** and **Confirmations** — matching the order below.
+
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `githubDesktopPlus.commitMessageCommand` | `omp` | Command behind the Generate button. It receives the diff on stdin and prints the message on stdout |
 | `githubDesktopPlus.commitMessageArgs` | `["-p", "--model", "commit"]` | Arguments passed to that command, before the built-in prompt |
+| `githubDesktopPlus.git.path` | `""` | Executable used for every git command. Empty uses the `git` on `PATH` |
+| `githubDesktopPlus.git.defaultRemote` | `origin` | Remote used by operations that name one: publishing, pushing a branch for the first time, force-push, tag push, checking out a pull request, and reading a repository's metadata |
+| `githubDesktopPlus.diff.contextLines` | `3` | Lines of unchanged context around each hunk, in working-tree and commit diffs. `0` shows only the changed lines |
+| `githubDesktopPlus.stash.includeUntracked` | `true` | Save untracked files with the stash instead of leaving them in the working tree |
+| `githubDesktopPlus.history.pageSize` | `50` | Commits per page in the History list, for the first page and every *load more* |
+| `githubDesktopPlus.history.dateFormat` | `relative` | `relative` shows "3 days ago", `absolute` shows the recorded time, e.g. `2026-10-12 14:26` |
 | `githubDesktopPlus.autoRefreshInterval` | `30` | Seconds between refreshes of the History panel while it is visible; `0` disables periodic refreshes |
+| `githubDesktopPlus.ui.avatars` | `github` | `github` loads avatar images from GitHub; `none` shows theme icons and initials instead and makes no avatar requests |
+| `githubDesktopPlus.ui.activityBarBadge` | `true` | Show the number of pending changes on the activity-bar icon |
+| `githubDesktopPlus.confirm.destructiveActions` | `true` | Ask before discarding changes, undoing a commit, amending a pushed commit, resetting, force-pushing, dropping a stash or merging into the default branch. `false` performs them immediately |
 
 ## Requirements
 
 - VS Code 1.84.0 or newer
-- Git installed and available on `PATH`
+- Git installed and available on `PATH`, or set `githubDesktopPlus.git.path` to
+  its absolute location
 - A GitHub account for the GitHub-specific features; local git operations work
   without one
 
@@ -161,7 +174,8 @@ The Accounts and Repositories views also offer these as context-menu entries.
 - Credentials for network operations are passed per git invocation as an ephemeral
   `http.extraheader`; repository configuration is left untouched
 - Everything runs locally. The extension collects no telemetry and sends nothing
-  anywhere except the GitHub API calls its features require
+  anywhere except the GitHub API calls its features require — setting
+  `githubDesktopPlus.ui.avatars` to `none` removes the avatar lookups entirely
 - Commands run through `execFile` with argument arrays rather than a shell
 
 ## Issues and contributions

@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import { AccountManager } from "./core/accounts/account-manager";
 import { AutoRefresh } from "./core/services/auto-refresh";
+import { readSettings, SETTINGS_NAMESPACE } from "./core/services/settings";
 import { RepositoryManager } from "./core/repositories/repository-manager";
 import { GIT_CONTENT_SCHEME, GitContentProvider } from "./core/git/native-diff";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
@@ -34,7 +35,10 @@ export async function activate(
   await accountManager.initialize();
   await repositoryManager.initialize();
 
-  const accountsProvider = new AccountsProvider(accountManager);
+  const accountsProvider = new AccountsProvider(
+    accountManager,
+    () => readSettings().ui.avatars === "github",
+  );
   const repositoriesProvider = new RepositoriesProvider(
     repositoryManager,
     accountManager,
@@ -46,13 +50,17 @@ export async function activate(
     "githubDesktopPlus.repositories",
     { treeDataProvider: repositoriesProvider },
   );
-  const changesBadge = new RepositoriesViewBadge(repositoriesView);
+  const changesBadge = new RepositoriesViewBadge(
+    repositoriesView,
+    () => readSettings().ui.activityBarBadge,
+  );
 
   const timelineProvider = new TimelineViewProvider(
     context,
     repositoryManager,
     accountManager,
     changesBadge,
+    readSettings,
   );
 
   const refreshAllViews = () => {
@@ -82,9 +90,14 @@ export async function activate(
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("githubDesktopPlus.autoRefreshInterval")) {
-        autoRefresh.start();
+      if (!event.affectsConfiguration(SETTINGS_NAMESPACE)) {
+        return;
       }
+      // Everything reads its setting at the moment it is used: the timer when
+      // it is armed, the webview when it re-renders from the current values.
+      // So a restart plus one refresh applies any change.
+      autoRefresh.start();
+      void timelineProvider.refresh();
     }),
     vscode.workspace.registerTextDocumentContentProvider(
       GIT_CONTENT_SCHEME,
@@ -111,7 +124,7 @@ export async function activate(
     ),
     vscode.commands.registerCommand(
       "githubDesktopPlus.signOutAccount",
-      (item: any) => {
+      (item?: { account?: { id?: string } }) => {
         const accountId = item?.account?.id;
         return accountManager.signOut(accountId);
       },
@@ -223,7 +236,7 @@ export async function activate(
     ),
     vscode.commands.registerCommand(
       "githubDesktopPlus.removeAccount",
-      async (item: any) => {
+      async (item?: { account?: { id?: string } }) => {
         const accountId = item?.account?.id;
         if (accountId) {
           await accountManager.signOut(accountId);
@@ -327,7 +340,7 @@ async function cloneRepository(
   )}@github.com/${parsed.owner}/${parsed.name}.git`;
   const cleanRemote = `https://github.com/${parsed.owner}/${parsed.name}.git`;
 
-  const git = simpleGit();
+  const git = simpleGit(gitOptions());
   const progress = vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -337,7 +350,7 @@ async function cloneRepository(
     async (progressState) => {
       progressState.report({ message: "Fetching repository data..." });
       await git.clone(remoteWithToken, targetPath, ["--progress"]);
-      const repoGit = simpleGit(targetPath);
+      const repoGit = simpleGit(targetPath, gitOptions());
       await repoGit.remote(["set-url", "origin", cleanRemote]);
     },
   );
@@ -727,15 +740,28 @@ async function syncWorkspaceRepositories(
   }
 }
 
+/**
+ * Options for the `simpleGit` clients this file creates directly — cloning and
+ * repository detection — so they run the git named by
+ * `githubDesktopPlus.git.path` too, not only the ones behind the factory.
+ */
+function gitOptions(): { binary?: string } {
+  const binary = readSettings().git.path;
+  return binary ? { binary } : {};
+}
+
 async function detectRepositoryMetadata(
   localPath: string,
 ): Promise<{ owner: string; name: string; remoteUrl?: string }> {
   try {
-    const git = simpleGit(localPath);
+    const git = simpleGit(localPath, gitOptions());
     const remotes = await git.getRemotes(true);
-    const origin =
-      remotes.find((remote) => remote.name === "origin") ?? remotes[0];
-    const remoteUrl = origin?.refs.fetch ?? origin?.refs.push;
+    const preferred = readSettings().git.defaultRemote;
+    const remote =
+      remotes.find((candidate) => candidate.name === preferred) ??
+      remotes.find((candidate) => candidate.name === "origin") ??
+      remotes[0];
+    const remoteUrl = remote?.refs.fetch ?? remote?.refs.push;
     if (remoteUrl) {
       const parsed = parseRepositoryIdentifier(remoteUrl);
       if (parsed) {

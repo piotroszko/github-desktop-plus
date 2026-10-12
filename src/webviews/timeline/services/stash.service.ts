@@ -12,13 +12,17 @@ export class StashService extends RepositoryScopedService {
     notifier: Notifier,
     private readonly git: GitClientFactory,
     private readonly refresher: Refresher,
+    private readonly includeUntracked: () => boolean,
   ) {
     super(repos, notifier);
   }
 
   push(message: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const args = ["stash", "push", "--include-untracked"];
+      const args = ["stash", "push"];
+      if (this.includeUntracked()) {
+        args.push("--include-untracked");
+      }
       if (message.trim()) {
         args.push("-m", message.trim());
       }

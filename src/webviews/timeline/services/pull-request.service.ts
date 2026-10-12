@@ -27,6 +27,7 @@ export class PullRequestService extends RepositoryScopedService {
     private readonly channel: WebviewChannel,
     private readonly api: GitHubApi,
     private readonly refresher: Refresher,
+    private readonly remote: () => string,
   ) {
     super(repos, notifier);
   }
@@ -91,7 +92,7 @@ export class PullRequestService extends RepositoryScopedService {
       const local = `pr/${prNumber}`;
       try {
         await this.git.withAuth(repo, (git) =>
-          git.fetch(["origin", `pull/${prNumber}/head:${local}`]),
+          git.fetch([this.remote(), `pull/${prNumber}/head:${local}`]),
         );
       } catch (error) {
         this.notifier.error(

@@ -1,9 +1,12 @@
 import * as path from "path";
 import { SimpleGit, StatusResult } from "simple-git";
 import { GitClientFactory } from "../../../core/git/git-authenticator";
+import { ExtensionSettings } from "../../../core/services/settings";
+import { CommitDateFormat } from "../../../shared/types";
 import { RepositoryContext } from "../ports";
 import {
   COMMIT_LOG_FORMAT,
+  formatAbsoluteTime,
   formatRelativeTime,
   parseCommitLogLine,
 } from "./commit-log";
@@ -14,7 +17,6 @@ import {
   CommitDetail,
 } from "../interfaces/timeline-view-provider.interface";
 import {
-  COMMITS_PAGE_SIZE,
   InProgressOperation,
   RemoteStatus,
   RepositorySnapshot,
@@ -32,6 +34,7 @@ export class RepositoryDataService {
   constructor(
     private readonly repos: RepositoryContext,
     private readonly git: GitClientFactory,
+    private readonly settings: () => ExtensionSettings,
   ) {}
 
   /**
@@ -82,12 +85,11 @@ export class RepositoryDataService {
     }
 
     const git = this.git.local(repo);
+    const { pageSize, dateFormat } = this.settings().history;
     const [status, log, branch, remotes] = await Promise.all([
       git.status(),
       // A repository with no commit yet has no log to read.
-      git
-        .log({ maxCount: COMMITS_PAGE_SIZE })
-        .catch(() => ({ all: [], total: 0 })),
+      git.log({ maxCount: pageSize }).catch(() => ({ all: [], total: 0 })),
       git.branch(),
       git.getRemotes(true),
     ]);
@@ -103,7 +105,7 @@ export class RepositoryDataService {
     const changes = this.toChangeEntries(status);
 
     const commits: CommitEntry[] = log.all.map((commit, index) =>
-      this.toCommitEntry(commit, index, remoteStatus),
+      this.toCommitEntry(commit, index, remoteStatus, dateFormat),
     );
 
     const branchList = await this.listBranches(git, branch.all, branch.current);
@@ -113,7 +115,7 @@ export class RepositoryDataService {
     return {
       changes,
       commits,
-      hasMoreCommits: log.all.length === COMMITS_PAGE_SIZE,
+      hasMoreCommits: log.all.length === pageSize,
       branches: branchList,
       currentBranch: branch.current || null,
       branchActivity: await this.getBranchActivity(git),
@@ -152,13 +154,14 @@ export class RepositoryDataService {
       return { commits: [], hasMoreCommits: false, offset };
     }
 
+    const { pageSize, dateFormat } = this.settings().history;
     const raw = await this.git
       .local(repo)
       .raw([
         "log",
         `--format=${COMMIT_LOG_FORMAT}`,
         "--date=iso",
-        `--max-count=${COMMITS_PAGE_SIZE}`,
+        `--max-count=${pageSize}`,
         `--skip=${offset}`,
       ]);
 
@@ -166,7 +169,7 @@ export class RepositoryDataService {
       .split("\n")
       .filter((line) => line.trim())
       .map((line, index) => ({
-        ...parseCommitLogLine(line),
+        ...parseCommitLogLine(line, dateFormat),
         isPushed: remoteStatus.isPublished
           ? offset + index >= remoteStatus.ahead
           : false,
@@ -174,8 +177,8 @@ export class RepositoryDataService {
 
     return {
       commits,
-      hasMoreCommits: commits.length === COMMITS_PAGE_SIZE,
-      offset: offset + COMMITS_PAGE_SIZE,
+      hasMoreCommits: commits.length === pageSize,
+      offset: offset + pageSize,
     };
   }
 
@@ -259,7 +262,10 @@ export class RepositoryDataService {
         message,
         authorName,
         authorEmail,
-        relativeTime: formatRelativeTime(committedAt),
+        relativeTime:
+          this.settings().history.dateFormat === "absolute"
+            ? formatAbsoluteTime(committedAt)
+            : formatRelativeTime(committedAt),
         committedAt,
         additions,
         deletions,
@@ -314,6 +320,7 @@ export class RepositoryDataService {
     },
     index: number,
     remoteStatus: RemoteStatus,
+    dateFormat: CommitDateFormat,
   ): CommitEntry {
     const hash = commit.hash ?? "";
     return {
@@ -322,7 +329,10 @@ export class RepositoryDataService {
       message: commit.message ?? "",
       authorName: commit.author_name ?? "",
       authorEmail: commit.author_email ?? "",
-      relativeTime: formatRelativeTime(commit.date ?? ""),
+      relativeTime:
+        dateFormat === "absolute"
+          ? formatAbsoluteTime(commit.date ?? "")
+          : formatRelativeTime(commit.date ?? ""),
       committedAt: commit.date ?? "",
       isPushed: remoteStatus.isPublished ? index >= remoteStatus.ahead : false,
     };

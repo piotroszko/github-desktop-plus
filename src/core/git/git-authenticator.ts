@@ -66,10 +66,13 @@ export interface GitClientFactory {
  * repository, falling back to the active account.
  */
 export class AccountGitClientFactory implements GitClientFactory {
-  constructor(private readonly accounts: AccountManager) {}
+  constructor(
+    private readonly accounts: AccountManager,
+    private readonly gitPath: () => string,
+  ) {}
 
   local(repo: TrackedRepository): SimpleGit {
-    return simpleGit(repo.localPath, { config: this.identityConfig(repo) });
+    return this.client(repo.localPath, this.identityConfig(repo));
   }
 
   async withAuth<T>(
@@ -90,7 +93,16 @@ export class AccountGitClientFactory implements GitClientFactory {
       config.push(`http.https://github.com/.extraheader=${header}`);
     }
 
-    return fn(simpleGit(repo.localPath, { config }));
+    return fn(this.client(repo.localPath, config));
+  }
+
+  /**
+   * A local client over `localPath` carrying `config` as `-c` arguments and,
+   * when `git.path` is set, that executable instead of the one on `PATH`.
+   */
+  private client(localPath: string, config: string[]): SimpleGit {
+    const binary = this.gitPath();
+    return simpleGit(localPath, binary ? { config, binary } : { config });
   }
 
   /**

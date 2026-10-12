@@ -18,6 +18,7 @@ export class CommitActionsService extends RepositoryScopedService {
     private readonly git: GitClientFactory,
     private readonly browser: Browser,
     private readonly refresher: Refresher,
+    private readonly remote: () => string,
   ) {
     super(repos, notifier);
   }
@@ -105,7 +106,7 @@ export class CommitActionsService extends RepositoryScopedService {
       }
       await this.git.withAuth(repo, async (g) => {
         await g.raw(["tag", "-a", name, hash, "-m", `Release ${name}`]);
-        await g.raw(["push", "origin", `refs/tags/${name}`]);
+        await g.raw(["push", this.remote(), `refs/tags/${name}`]);
       });
       this.notifier.info(`Created and pushed tag '${name}'`);
       await this.refresher.refresh();

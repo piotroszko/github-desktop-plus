@@ -20,6 +20,7 @@ export class WorkingTreeService extends RepositoryScopedService {
     private readonly git: GitClientFactory,
     private readonly channel: WebviewChannel,
     private readonly refresher: Refresher,
+    private readonly contextLines: () => number,
   ) {
     super(repos, notifier);
   }
@@ -150,10 +151,11 @@ export class WorkingTreeService extends RepositoryScopedService {
   workingDiff(filePath: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       const git = this.git.local(repo);
-      let diff = await git.raw(["diff", "HEAD", "--", filePath]);
+      const unified = `--unified=${this.contextLines()}`;
+      let diff = await git.raw(["diff", unified, "HEAD", "--", filePath]);
       if (!diff.trim()) {
         diff = await git
-          .raw(["diff", "--no-index", "--", "/dev/null", filePath])
+          .raw(["diff", unified, "--no-index", "--", "/dev/null", filePath])
           .catch(() => "");
       }
       this.channel.post({

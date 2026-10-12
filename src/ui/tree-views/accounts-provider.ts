@@ -6,6 +6,7 @@ class AccountItem extends vscode.TreeItem {
   constructor(
     public readonly account: StoredAccount,
     private readonly active: boolean,
+    private readonly showAvatars: boolean,
   ) {
     super(account.login, vscode.TreeItemCollapsibleState.None);
     this.description = this.getDescription();
@@ -39,23 +40,18 @@ class AccountItem extends vscode.TreeItem {
     return description;
   }
 
-  private getIcon(): any {
-    // Debug logging
-    console.log(`Avatar URL for ${this.account.login}:`, this.account.avatarUrl);
-
+  private getIcon(): vscode.Uri | vscode.ThemeIcon {
     // Try to use user's avatar if available
-    if (this.account.avatarUrl) {
+    if (this.showAvatars && this.account.avatarUrl) {
       try {
         // GitHub avatar URLs support size parameters
         const sizedAvatarUrl = this.account.avatarUrl.includes('?')
           ? `${this.account.avatarUrl}&s=32`
           : `${this.account.avatarUrl}?s=32`;
 
-        const avatarUri = vscode.Uri.parse(sizedAvatarUrl);
-        console.log(`Using avatar URI for ${this.account.login}:`, avatarUri.toString());
-        return avatarUri;
-      } catch (error) {
-        console.log(`Failed to parse avatar URL for ${this.account.login}:`, error);
+        return vscode.Uri.parse(sizedAvatarUrl);
+      } catch {
+        // Unparseable URL: fall through to the theme icons below.
       }
     }
 
@@ -135,7 +131,10 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(private readonly accountManager: AccountManager) {
+  constructor(
+    private readonly accountManager: AccountManager,
+    private readonly showAvatars: () => boolean,
+  ) {
     this.accountManager.onDidChangeAccounts(() => this.refresh());
   }
 
@@ -146,13 +145,6 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
   getChildren(): vscode.ProviderResult<TreeItem[]> {
     const accounts = this.accountManager.getAccounts();
     const items: TreeItem[] = [];
-
-    // Debug logging for accounts
-    console.log('AccountsProvider: Retrieved accounts:', accounts.map(acc => ({
-      login: acc.login,
-      name: acc.name,
-      avatarUrl: acc.avatarUrl
-    })));
 
     if (accounts.length === 0) {
       // Show initial sign-in item when no accounts exist
@@ -181,7 +173,13 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
     });
 
     for (const account of sortedAccounts) {
-      items.push(new AccountItem(account, account.id === activeAccount?.id));
+      items.push(
+        new AccountItem(
+          account,
+          account.id === activeAccount?.id,
+          this.showAvatars(),
+        ),
+      );
     }
 
     // Add management items at the end

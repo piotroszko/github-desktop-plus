@@ -14,6 +14,7 @@ export class DiffService extends RepositoryScopedService {
     private readonly git: GitClientFactory,
     private readonly data: RepositoryDataService,
     private readonly channel: WebviewChannel,
+    private readonly contextLines: () => number,
   ) {
     super(repos, notifier);
   }
@@ -33,9 +34,17 @@ export class DiffService extends RepositoryScopedService {
   fileDiff(hash: string, filePath: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       const git = this.git.local(repo);
-      let diff = await git.raw(["show", hash, "--patch", "--", filePath]);
+      const unified = `--unified=${this.contextLines()}`;
+      let diff = await git.raw([
+        "show",
+        unified,
+        hash,
+        "--patch",
+        "--",
+        filePath,
+      ]);
       if (!diff.trim()) {
-        diff = await git.raw(["show", hash, "--", filePath]);
+        diff = await git.raw(["show", unified, hash, "--", filePath]);
       }
       this.channel.post({
         command: "fileDiff",

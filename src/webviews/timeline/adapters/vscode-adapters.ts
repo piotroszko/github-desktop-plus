@@ -135,6 +135,8 @@ export class VsCodeNativeDiff implements NativeDiff {
  * @description {@link Notifier} backed by `vscode.window`.
  */
 export class VsCodeNotifier implements Notifier {
+  constructor(private readonly confirmEnabled: () => boolean) {}
+
   info(message: string): void {
     void vscode.window.showInformationMessage(message);
   }
@@ -148,6 +150,9 @@ export class VsCodeNotifier implements Notifier {
   }
 
   async confirm(message: string, confirmLabel: string): Promise<boolean> {
+    if (!this.confirmEnabled()) {
+      return true;
+    }
     const choice = await vscode.window.showWarningMessage(
       message,
       { modal: true },
@@ -215,7 +220,10 @@ function gitHubSlug(
  * authenticated Octokit.
  */
 export class AccountGitHubApi implements GitHubApi {
-  constructor(private readonly accounts: AccountManager) {}
+  constructor(
+    private readonly accounts: AccountManager,
+    private readonly avatarsEnabled: () => boolean,
+  ) {}
 
   async listPullRequests(
     repo: TrackedRepository,
@@ -254,6 +262,9 @@ export class AccountGitHubApi implements GitHubApi {
     repo: TrackedRepository,
     ref?: string,
   ): Promise<Record<string, string>> {
+    if (!this.avatarsEnabled()) {
+      return {};
+    }
     const slug = gitHubSlug(repo);
     if (!slug) {
       return {};

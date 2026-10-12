@@ -149,34 +149,125 @@
         }
       ]
     },
-    "configuration": {
-      "title": "GitHub Desktop Plus",
-      "properties": {
-        "githubDesktopPlus.commitMessageCommand": {
-          "type": "string",
-          "default": "omp",
-          "description": "Command behind the Generate button next to the commit Summary field. It receives the diff on stdin and must print the commit message on stdout."
-        },
-        "githubDesktopPlus.commitMessageArgs": {
-          "type": "array",
-          "items": {
-            "type": "string"
+    "configuration": [
+      {
+        "title": "GitHub Desktop Plus",
+        "properties": {
+          "githubDesktopPlus.commitMessageCommand": {
+            "type": "string",
+            "default": "omp",
+            "description": "Command behind the Generate button next to the commit Summary field. It receives the diff on stdin and must print the commit message on stdout."
           },
-          "default": [
-            "-p",
-            "--model",
-            "commit"
-          ],
-          "description": "Arguments passed to the commit message command, before the built-in prompt. The prompt asks for a conventional-commit subject (feat:, fix:, …) and keeps the whole message within 100 characters."
-        },
-        "githubDesktopPlus.autoRefreshInterval": {
-          "type": "number",
-          "default": 30,
-          "minimum": 0,
-          "description": "Seconds between automatic refreshes of the History panel while it is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up. Set to 0 to disable periodic refreshes — the panel still refreshes when it regains focus or a file is saved in VS Code."
+          "githubDesktopPlus.commitMessageArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "-p",
+              "--model",
+              "commit"
+            ],
+            "description": "Arguments passed to the commit message command, before the built-in prompt. The prompt asks for a conventional-commit subject (feat:, fix:, …) and keeps the whole message within 100 characters."
+          }
+        }
+      },
+      {
+        "title": "Git",
+        "order": 1,
+        "properties": {
+          "githubDesktopPlus.git.path": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Executable used for every git command. Leave empty to use the `git` found on `PATH`; set an absolute path (e.g. `/opt/homebrew/bin/git`, `C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe`) when VS Code does not inherit the shell that has git."
+          },
+          "githubDesktopPlus.git.defaultRemote": {
+            "type": "string",
+            "default": "origin",
+            "markdownDescription": "Remote that operations naming a remote use: pushing an unpublished branch (`-u`), publishing, force-pushing, fetching a pull request, pushing a tag, and reading repository metadata. Prefer the configured remote when a repository has it, otherwise the first remote it has."
+          },
+          "githubDesktopPlus.diff.contextLines": {
+            "type": "number",
+            "default": 3,
+            "minimum": 0,
+            "maximum": 50,
+            "description": "Lines of unchanged context shown around each hunk in the working-tree and commit diffs. 0 shows only the changed lines."
+          },
+          "githubDesktopPlus.stash.includeUntracked": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include untracked files when stashing, so files git has never seen are saved with the stash instead of being left behind."
+          }
+        }
+      },
+      {
+        "title": "History",
+        "order": 2,
+        "properties": {
+          "githubDesktopPlus.history.pageSize": {
+            "type": "number",
+            "default": 50,
+            "minimum": 10,
+            "maximum": 500,
+            "description": "Commits loaded per page in the History list, for the first page and for each \"load more\". Lower it for faster refreshes on very large repositories."
+          },
+          "githubDesktopPlus.history.dateFormat": {
+            "type": "string",
+            "enum": [
+              "relative",
+              "absolute"
+            ],
+            "default": "relative",
+            "enumDescriptions": [
+              "\"3 days ago\"",
+              "The time git recorded, e.g. \"2026-10-12 14:26\""
+            ],
+            "description": "How commit dates are shown in the History list."
+          },
+          "githubDesktopPlus.autoRefreshInterval": {
+            "type": "number",
+            "default": 30,
+            "minimum": 0,
+            "description": "Seconds between automatic refreshes of the History panel while it is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up. Set to 0 to disable periodic refreshes — the panel still refreshes when it regains focus or a file is saved in VS Code."
+          }
+        }
+      },
+      {
+        "title": "Interface",
+        "order": 3,
+        "properties": {
+          "githubDesktopPlus.ui.avatars": {
+            "type": "string",
+            "enum": [
+              "github",
+              "none"
+            ],
+            "default": "github",
+            "enumDescriptions": [
+              "Load avatar images from GitHub",
+              "Show theme icons and initials instead — no requests to GitHub for images"
+            ],
+            "markdownDescription": "Where avatars come from, in the History list and in the Accounts tree. `none` keeps the extension from looking up commit authors and loading avatar images, useful on metered connections or when the images are noise."
+          },
+          "githubDesktopPlus.ui.activityBarBadge": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show the number of pending changes on the activity bar icon."
+          }
+        }
+      },
+      {
+        "title": "Confirmations",
+        "order": 4,
+        "properties": {
+          "githubDesktopPlus.confirm.destructiveActions": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Ask for confirmation before actions that lose work or rewrite published history: discarding changes, undoing a commit, amending a pushed commit, resetting to a commit, force-pushing, dropping a stash, merging into the default branch. Turning this off performs them immediately."
+          }
         }
       }
-    },
+    ],
     "menus": {
       "view/item/context": [
         {

@@ -5,6 +5,43 @@ All notable changes to GitHub Desktop Plus are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Settings, so the extension can be adjusted in VS Code's Settings UI. Read
+  through one module (`src/core/services/settings.ts`) that validates and clamps
+  every value, and re-read at the moment each is used, so a change applies
+  without reloading the window:
+  - `githubDesktopPlus.git.path` — run a specific git executable instead of the
+    one on `PATH`
+  - `githubDesktopPlus.git.defaultRemote` — the remote used by operations that
+    name one (publishing, first push of a branch, force-push, tag push,
+    pull-request checkout, repository metadata), instead of hardcoded `origin`
+  - `githubDesktopPlus.stash.includeUntracked` — whether stashing takes
+    untracked files with it
+  - `githubDesktopPlus.diff.contextLines` — context lines around each hunk
+  - `githubDesktopPlus.history.pageSize` — commits per page in History
+  - `githubDesktopPlus.history.dateFormat` — relative ("3 days ago") or absolute
+    times
+  - `githubDesktopPlus.ui.avatars` — `none` skips the avatar lookups against the
+    GitHub API and shows theme icons, in History and in the Accounts tree
+  - `githubDesktopPlus.ui.activityBarBadge` — hide the pending-change count
+  - `githubDesktopPlus.confirm.destructiveActions` — skip the confirmation
+    modals in front of discarding, undoing, amending a pushed commit, resetting,
+    force-pushing, dropping a stash and merging into the default branch
+- Settings categories in the Settings UI: `contributes.configuration` is now an
+  array of five categories — *GitHub Desktop Plus* (commit-message generation),
+  *Git*, *History*, *Interface* and *Confirmations* — so the editor shows a
+  submenu per topic instead of one flat list. The three settings that existed
+  before keep their exact ids and values; `autoRefreshInterval` simply appears
+  under *History* now, where it belongs
+
+### Changed
+- Publishing now prefers the configured default remote when the repository has
+  it, and falls back to the first remote otherwise (previously always the first)
+- Avatar URLs are no longer logged to the extension host console, and the
+  Accounts tree reports the precise icon type instead of `any`
+
 ## [v2.0.1] - 2026-10-12
 
 ### Changed

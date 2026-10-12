@@ -4,6 +4,7 @@ import {
   resolveRepositoryAccount,
 } from "../../shared/utils/repo-account";
 import { GitClientFactory } from "../../core/git/git-authenticator";
+import { ExtensionSettings } from "../../core/services/settings";
 import { BusyTask, InboundMessage } from "./messages";
 import { RemoteStatus } from "./interfaces/repository-snapshot";
 import { MessageRouter } from "./message-router";
@@ -49,7 +50,7 @@ export class TimelineController implements Refresher {
     lastFetched: null,
     remoteBranch: null,
   };
-  private readonly commitAvatars: Record<string, string> = {};
+  private commitAvatars: Record<string, string> = {};
   private lastAvatarFetchKey: string | null = null;
 
   constructor(
@@ -65,14 +66,25 @@ export class TimelineController implements Refresher {
       drafts: DraftStore;
       badge: ChangesBadge;
       generator: MessageGenerator;
+      settings: () => ExtensionSettings;
     },
   ) {
     const { repos, notifier, channel, browser, git, nativeDiff, drafts } = deps;
+    const settings = deps.settings;
+    const remote = () => settings().git.defaultRemote;
+    const contextLines = () => settings().diff.contextLines;
 
-    this.data = new RepositoryDataService(repos, git);
+    this.data = new RepositoryDataService(repos, git, settings);
 
-    const working = new WorkingTreeService(repos, notifier, git, channel, this);
-    const sync = new SyncService(repos, notifier, git, channel, this);
+    const working = new WorkingTreeService(
+      repos,
+      notifier,
+      git,
+      channel,
+      this,
+      contextLines,
+    );
+    const sync = new SyncService(repos, notifier, git, channel, this, remote);
     const branch = new BranchService(repos, notifier, git, channel, this);
     const commitActions = new CommitActionsService(
       repos,
@@ -80,6 +92,7 @@ export class TimelineController implements Refresher {
       git,
       browser,
       this,
+      remote,
     );
     const pr = new PullRequestService(
       repos,
@@ -89,10 +102,20 @@ export class TimelineController implements Refresher {
       channel,
       deps.githubApi,
       this,
+      remote,
     );
-    const diff = new DiffService(repos, notifier, git, this.data, channel);
+    const diff = new DiffService(
+      repos,
+      notifier,
+      git,
+      this.data,
+      channel,
+      contextLines,
+    );
     const conflict = new ConflictService(repos, notifier, git, this);
-    const stash = new StashService(repos, notifier, git, this);
+    const stash = new StashService(repos, notifier, git, this, () =>
+      settings().stash.includeUntracked,
+    );
     const message = new CommitMessageService(
       repos,
       notifier,
@@ -351,6 +374,16 @@ export class TimelineController implements Refresher {
   ): void {
     const repo = this.deps.repos.getPrimary();
     if (!repo) {
+      return;
+    }
+    if (this.deps.settings().ui.avatars === "none") {
+      // Drop what is already on screen so turning the setting off takes effect
+      // immediately, and clear the key so re-enabling fetches again.
+      this.lastAvatarFetchKey = null;
+      if (Object.keys(this.commitAvatars).length) {
+        this.commitAvatars = {};
+        this.deps.channel.post({ command: "updateCommitAvatars", avatars: {} });
+      }
       return;
     }
     const key = `${repo.owner ?? ""}/${repo.name ?? ""}@${branch ?? ""}:${topHash ?? ""}`;

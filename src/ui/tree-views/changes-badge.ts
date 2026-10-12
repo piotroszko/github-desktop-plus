@@ -8,10 +8,13 @@ import * as vscode from "vscode";
  * Satisfies the timeline's `ChangesBadge` port.
  */
 export class RepositoriesViewBadge<T> {
-  constructor(private readonly view: vscode.TreeView<T>) {}
+  constructor(
+    private readonly view: vscode.TreeView<T>,
+    private readonly enabled: () => boolean,
+  ) {}
 
   update(changedFiles: number, repositoryName: string | null): void {
-    if (changedFiles <= 0 || !repositoryName) {
+    if (!this.enabled() || changedFiles <= 0 || !repositoryName) {
       this.view.badge = undefined;
       return;
     }
