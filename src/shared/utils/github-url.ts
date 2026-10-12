@@ -27,7 +27,9 @@ export function toGitHubWebUrl(remoteUrl: string | undefined): string | null {
  * @param ref - A branch ref, or `undefined`/`null`
  * @returns The branch name, or `null` when there is nothing to name
  */
-export function toGitHubBranchName(ref: string | undefined | null): string | null {
+export function toGitHubBranchName(
+  ref: string | undefined | null,
+): string | null {
   if (!ref) {
     return null;
   }

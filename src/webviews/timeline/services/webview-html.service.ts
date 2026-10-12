@@ -845,6 +845,12 @@ function saveDraft(now) {
 function baseBranchName() {
   return (state.repository && state.repository.baseBranch) || null;
 }
+// The list shows branch names ("develop"); the base is stored as the git ref the
+// user picked ("origin/develop"), so both spellings have to match.
+function isBaseBranch(b) {
+  const base = baseBranchName();
+  return !!base && (b === base || base.endsWith("/" + b));
+}
 function uniquePaths(entries) {
   const paths = new Set();
   for (const c of entries) paths.add(c.path);
@@ -1568,16 +1574,15 @@ $("branchCell").onclick = () => {
     const draw = () => {
       const q = filter.value.trim().toLowerCase();
       holder.innerHTML = "";
-      const base = baseBranchName();
       const items = state.branches
         .filter((b) => !q || b.toLowerCase().indexOf(q) >= 0)
-        .sort((a, b) => (a === base ? -1 : b === base ? 1 : 0));
+        .sort((a, b) => (isBaseBranch(a) ? -1 : isBaseBranch(b) ? 1 : 0));
       if (!items.length) { holder.innerHTML = '<div class="menu-empty">No branches</div>'; return; }
       for (const b of items) {
         const it = document.createElement("div");
         const isCur = b === state.currentBranch;
         it.className = "menu-item" + (isCur ? " is-current" : "");
-        const suffix = isCur ? "  (current)" : b === base ? "  (base)" : "";
+        const suffix = isCur ? "  (current)" : isBaseBranch(b) ? "  (base)" : "";
         it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + suffix + '</span>';
         it.onclick = () => { closeMenu(); if (!isCur) post("checkoutBranch", { branch: b }); };
         if (!isCur) {
@@ -1682,10 +1687,9 @@ function startMergeBranch() {
     filter.className = "menu-filter"; filter.placeholder = "Find a branch to merge…";
     m.appendChild(filter);
     const holder = document.createElement("div"); m.appendChild(holder);
-    const base = baseBranchName();
     const candidates = state.branches
       .filter((b) => b !== state.currentBranch)
-      .sort((a, b) => (a === base ? -1 : b === base ? 1 : 0));
+      .sort((a, b) => (isBaseBranch(a) ? -1 : isBaseBranch(b) ? 1 : 0));
     const draw = () => {
       const q = filter.value.trim().toLowerCase();
       holder.innerHTML = "";
@@ -1694,7 +1698,7 @@ function startMergeBranch() {
       for (const b of items) {
         const it = document.createElement("div");
         it.className = "menu-item";
-        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + (b === base ? "  (base)" : "") + '</span>';
+        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + (isBaseBranch(b) ? "  (base)" : "") + '</span>';
         it.onclick = () => {
           closeMenu();
           post("mergeBranch", { fromBranch: b, toBranch: state.currentBranch });

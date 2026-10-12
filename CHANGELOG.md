@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would orphan existing repositories and tokens)
 
 ### Added
+- **Select Base Branch for Repository** (`githubDesktopPlus.selectBaseBranch`, on
+  the Repositories tree item and in the palette): pick the branch the extension
+  compares against when the tracked upstream is not the branch you work with
+  (e.g. it tracks `prod` but you target `develop`). It drives the sync cell's
+  ahead/behind and state, the pull-request compare link and pull-request list
+  filter, and the branch menu (base first, marked `(base)`, plus a "Compare with
+  <base>" entry). It is an extension setting only: git's upstream, and therefore
+  push, pull and other tools, are untouched; "Follow the tracked branch" clears
+  it, and a base that no longer exists falls back to the upstream
 - The activity bar icon now carries a badge with the number of files that have
   uncommitted changes in the active repository (staged and unstaged counted
   once), with the repository name in its tooltip; it clears as soon as the tree

@@ -103,6 +103,20 @@ those files are committed; with nothing staged, the ticked files are staged and
 committed together (`commitFiles`). `amendCommit` follows the same rule — it
 adds no extra paths when the index already holds changes.
 
+## Base branch (what the extension compares against)
+
+`TrackedRepository.baseBranch` is an optional git ref (`origin/develop`) picked
+per repository with **Select Base Branch for Repository**. `RepositoryDataService`
+uses it as the comparison ref for the sync cell (ahead/behind, sync state,
+`remoteBranch`) when it still resolves, falling back to `@{upstream}` otherwise —
+`isPublished` keeps meaning "git knows an upstream", so a local base cannot make
+an unpublished branch look published. `PullRequestService` uses its branch name
+(`toGitHubBranchName`, `origin/develop` → `develop`) for the compare link and the
+pull-request list filter, and the branch menu marks it `(base)`.
+
+Push and pull are deliberately untouched: they keep using git's own upstream, so
+selecting a base never rewrites the repository's configuration.
+
 ## Authentication
 `AccountManager` tries `gh auth token`, then VS Code's built-in GitHub auth,
 then a manually entered PAT. Tokens live only in `SecretStorage`. Git network

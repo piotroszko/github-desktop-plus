@@ -72,6 +72,7 @@
 - **Secure token storage** using VS Code Secret Storage API
 - **GitHub CLI integration** with automatic account detection
 - **One-click account switching** directly from accounts panel
+- **Per-repository base branch** — compare against `develop` (or any branch) even when the branch tracks `prod`; sync state, pull-request links and the branch menu follow it, while push/pull keep using git's own upstream
 - **Per-repository account selection** — pin a repo to a specific account (right-click it in the Repositories panel, right-click an account in the Accounts panel, or click the avatar next to the commit summary) while other repos keep using the active account
 - **Account-specific operations** with proper isolation
 - **Smart CLI account selection** with guided switching process
@@ -157,6 +158,7 @@ Access these commands via Command Palette (`Ctrl+Shift+P`):
 - `GitHub Desktop Plus: Open Repository` - Open any tracked repository
 - `GitHub Desktop Plus: Select Account for Repository` - Choose which account a single repository authenticates as
 - `GitHub Desktop Plus: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
+- `GitHub Desktop Plus: Select Base Branch for Repository` - Choose the branch the extension compares against (sync state, pull-request links) when it is not the tracked upstream
 - `GitHub Desktop Plus: Create Issue` - Create GitHub issues directly
 - `GitHub Desktop Plus: Refresh Views` - Refresh all panels
 
