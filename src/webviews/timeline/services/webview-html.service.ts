@@ -2,6 +2,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { RepositoryManager } from "@core/repositories/repository-manager";
 import { getPrimaryRepository } from "@shared/utils/repo-selection";
+import { DiffViewMode } from "@shared/types";
 import { CommitDraftStore } from "@core/services/commit-draft-store";
 
 /**
@@ -19,7 +20,7 @@ export class WebviewHtmlService {
     private readonly drafts: CommitDraftStore,
   ) {}
 
-  generateHtml(webview: vscode.Webview): string {
+  generateHtml(webview: vscode.Webview, diffMode: DiffViewMode): string {
     const nonce = getNonce();
     const repository = getPrimaryRepository(this.repositories);
     const initialData = {
@@ -36,6 +37,9 @@ export class WebviewHtmlService {
       draft: repository
         ? (this.drafts.get(repository.localPath) ?? null)
         : null,
+      // Where diffs belong: the client renders (or hides) its pane from this
+      // before the first broadcast arrives.
+      diffMode,
     };
 
     const csp = [
@@ -691,6 +695,7 @@ const state = {
   remote: null,
   tags: {},
   commitAvatars: {},
+  diffMode: (window.__INITIAL__ && window.__INITIAL__.diffMode) || "auto",
   tab: "changes",
   selectedFiles: new Set(),
   selectedPath: null,
@@ -1020,7 +1025,14 @@ function renderChanges() {
   updateCommitBtn();
 }
 function applyWidth() {
-  document.body.classList.toggle("narrow", window.innerWidth < 620);
+  // "narrow" is the single-column layout: no diff pane, and the left column
+  // gets the whole view. "editor" mode always wants it (diffs go to VS Code),
+  // "panel" never does (the pane is shown even in a cramped sidebar), "auto"
+  // follows the width.
+  const singleColumn =
+    state.diffMode === "editor" ||
+    (state.diffMode === "auto" && window.innerWidth < 620);
+  document.body.classList.toggle("narrow", singleColumn);
 }
 window.addEventListener("resize", applyWidth);
 
@@ -1997,6 +2009,12 @@ window.addEventListener("message", (ev) => {
       state.currentBranch = msg.currentBranch || null;
       state.branchActivity = msg.branchActivity || {};
       renderToolbar(); updateCommitBtn(); updateLayout();
+      break;
+    case "updateDiffMode":
+      state.diffMode =
+        msg.mode === "panel" || msg.mode === "editor" ? msg.mode : "auto";
+      applyWidth();
+      updateLayout();
       break;
     case "busy":
       state.busy = msg.task || null;

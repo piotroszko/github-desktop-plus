@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { AvatarMode, CommitDateFormat } from "../../shared/types";
+import { AvatarMode, CommitDateFormat, DiffViewMode } from "../../shared/types";
 
 /** Namespace every setting of this extension lives under. */
 export const SETTINGS_NAMESPACE = "githubDesktopPlus";
@@ -23,6 +23,8 @@ export interface ExtensionSettings {
   diff: {
     /** Context lines shown around each hunk. */
     contextLines: number;
+    /** Where diffs are shown: the panel's pane, VS Code's editor, or both by width. */
+    view: DiffViewMode;
   };
   history: {
     /** Commits per page in the History list. */
@@ -45,6 +47,7 @@ export interface RawSettings {
   defaultRemote?: unknown;
   stashIncludeUntracked?: unknown;
   diffContextLines?: unknown;
+  diffView?: unknown;
   historyPageSize?: unknown;
   historyDateFormat?: unknown;
   avatars?: unknown;
@@ -56,7 +59,7 @@ export interface RawSettings {
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   git: { path: "", defaultRemote: "origin" },
   stash: { includeUntracked: true },
-  diff: { contextLines: 3 },
+  diff: { contextLines: 3, view: "auto" },
   history: { pageSize: 50, dateFormat: "relative" },
   ui: { avatars: "github", activityBarBadge: true },
   confirm: { destructiveActions: true },
@@ -92,6 +95,10 @@ export function normalizeSettings(raw: RawSettings): ExtensionSettings {
         DEFAULT_SETTINGS.diff.contextLines,
         CONTEXT_LINE_LIMITS,
       ),
+      view:
+        raw.diffView === "panel" || raw.diffView === "editor"
+          ? raw.diffView
+          : "auto",
     },
     history: {
       pageSize: clamp(
@@ -130,6 +137,7 @@ export function readSettings(): ExtensionSettings {
     defaultRemote: config.get("git.defaultRemote"),
     stashIncludeUntracked: config.get("stash.includeUntracked"),
     diffContextLines: config.get("diff.contextLines"),
+    diffView: config.get("diff.view"),
     historyPageSize: config.get("history.pageSize"),
     historyDateFormat: config.get("history.dateFormat"),
     avatars: config.get("ui.avatars"),

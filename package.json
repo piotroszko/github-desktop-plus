@@ -186,13 +186,6 @@
             "default": "origin",
             "markdownDescription": "Remote that operations naming a remote use: pushing an unpublished branch (`-u`), publishing, force-pushing, fetching a pull request, pushing a tag, and reading repository metadata. Prefer the configured remote when a repository has it, otherwise the first remote it has."
           },
-          "githubDesktopPlus.diff.contextLines": {
-            "type": "number",
-            "default": 3,
-            "minimum": 0,
-            "maximum": 50,
-            "description": "Lines of unchanged context shown around each hunk in the working-tree and commit diffs. 0 shows only the changed lines."
-          },
           "githubDesktopPlus.stash.includeUntracked": {
             "type": "boolean",
             "default": true,
@@ -201,8 +194,36 @@
         }
       },
       {
-        "title": "History",
+        "title": "Diff",
         "order": 2,
+        "properties": {
+          "githubDesktopPlus.diff.view": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "panel",
+              "editor"
+            ],
+            "default": "auto",
+            "enumDescriptions": [
+              "Diff pane in the panel when it is wide enough, VS Code's diff editor when it is not",
+              "Always the panel's own diff pane, even when the panel is narrow",
+              "Always VS Code's diff editor (the main window); the panel's diff pane is never shown"
+            ],
+            "markdownDescription": "Where diffs are shown. `editor` sends every diff — a changed file, a commit, a file inside a commit — to VS Code's own diff editor, which is what you want when the panel is docked in a sidebar."
+          },
+          "githubDesktopPlus.diff.contextLines": {
+            "type": "number",
+            "default": 3,
+            "minimum": 0,
+            "maximum": 50,
+            "description": "Lines of unchanged context shown around each hunk in the working-tree and commit diffs. 0 shows only the changed lines."
+          }
+        }
+      },
+      {
+        "title": "History",
+        "order": 3,
         "properties": {
           "githubDesktopPlus.history.pageSize": {
             "type": "number",
@@ -234,7 +255,7 @@
       },
       {
         "title": "Interface",
-        "order": 3,
+        "order": 4,
         "properties": {
           "githubDesktopPlus.ui.avatars": {
             "type": "string",
@@ -258,7 +279,7 @@
       },
       {
         "title": "Confirmations",
-        "order": 4,
+        "order": 5,
         "properties": {
           "githubDesktopPlus.confirm.destructiveActions": {
             "type": "boolean",

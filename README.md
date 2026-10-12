@@ -63,7 +63,8 @@ On top of the original it adds:
 - Right-click a commit to reset, check out, revert, cherry-pick, create a branch
   or a tag, copy its SHA, or open it on GitHub
 - Diffs render in the panel's own pane, and fall back to VS Code's diff editor
-  when the panel is too narrow to show one
+  when the panel is too narrow to show one. `githubDesktopPlus.diff.view` decides
+  that: `panel` keeps them in the pane, `editor` sends every diff to VS Code
 
 ### Branches, sync and pull requests
 - Branch menu grouped into default, recent and other, with last-commit activity
@@ -142,7 +143,8 @@ The Accounts and Repositories views also offer these as context-menu entries.
 ## Settings
 
 The Settings UI groups these into categories — **GitHub Desktop Plus**, **Git**,
-**History**, **Interface** and **Confirmations** — matching the order below.
+**Diff**, **History**, **Interface** and **Confirmations** — matching the order
+below.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
@@ -150,6 +152,7 @@ The Settings UI groups these into categories — **GitHub Desktop Plus**, **Git*
 | `githubDesktopPlus.commitMessageArgs` | `["-p", "--model", "commit"]` | Arguments passed to that command, before the built-in prompt |
 | `githubDesktopPlus.git.path` | `""` | Executable used for every git command. Empty uses the `git` on `PATH` |
 | `githubDesktopPlus.git.defaultRemote` | `origin` | Remote used by operations that name one: publishing, pushing a branch for the first time, force-push, tag push, checking out a pull request, and reading a repository's metadata |
+| `githubDesktopPlus.diff.view` | `auto` | Where diffs are shown. `auto` uses the panel's own pane when there is room and VS Code's diff editor otherwise; `panel` always uses the pane; `editor` never does — a changed file, a commit or a file inside a commit opens in VS Code's diff editor |
 | `githubDesktopPlus.diff.contextLines` | `3` | Lines of unchanged context around each hunk, in working-tree and commit diffs. `0` shows only the changed lines |
 | `githubDesktopPlus.stash.includeUntracked` | `true` | Save untracked files with the stash instead of leaving them in the working tree |
 | `githubDesktopPlus.history.pageSize` | `50` | Commits per page in the History list, for the first page and every *load more* |

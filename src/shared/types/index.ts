@@ -68,6 +68,14 @@ export type CommitDateFormat = "relative" | "absolute";
 export type AvatarMode = "github" | "none";
 
 /**
+ * @description Where a diff is shown. `auto` keeps the panel's own diff pane
+ * when the panel is wide enough and falls back to VS Code's editor when it is
+ * not; `panel` always uses the pane; `editor` never renders the pane and sends
+ * every diff to VS Code's editor instead.
+ */
+export type DiffViewMode = "auto" | "panel" | "editor";
+
+/**
  * @description A commit message produced for the user (by the configured agent
  * CLI, or typed by hand before being read back).
  */

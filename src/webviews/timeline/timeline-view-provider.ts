@@ -57,6 +57,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     };
     webviewView.webview.html = this.htmlService.generateHtml(
       webviewView.webview,
+      this.settings().diff.view,
     );
 
     this.controller = new TimelineController({

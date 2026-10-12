@@ -10,7 +10,7 @@ import {
   StashEntry,
 } from "./interfaces/repository-snapshot";
 import { PullRequestSummary } from "./ports";
-import { CommitDraft } from "../../shared/types";
+import { CommitDraft, DiffViewMode } from "../../shared/types";
 
 /* ------------------------------------------------------------------ *
  *  Inbound: webview -> extension
@@ -212,4 +212,5 @@ export type OutboundMessage =
   | { command: "workingDiff"; payload: { path: string; diff: string } }
   | { command: "fileDiff"; payload: { path: string; diff: string } }
   | { command: "commitDetail"; payload: CommitDetail }
+  | { command: "updateDiffMode"; mode: DiffViewMode }
   | { command: "error"; message: string };

@@ -5,6 +5,19 @@ All notable changes to GitHub Desktop Plus are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `githubDesktopPlus.diff.view` — where a diff is shown. `auto` (the default) is
+  the previous behaviour: the panel's own pane when the panel is wide enough,
+  VS Code's diff editor when it is not. `editor` never renders the pane and
+  opens every diff — a changed file, a commit, a file inside a commit — in VS
+  Code's diff editor instead, which is what a sidebar-docked panel wants.
+  `panel` always uses the pane, even in a narrow sidebar. The webview is told
+  the mode on every refresh, so a change applies without reopening the panel.
+- A **Diff** settings category holding this setting and `diff.contextLines`,
+  moved out of *Git*
+
 ## [v2.1.0] - 2026-10-12
 
 ### Added

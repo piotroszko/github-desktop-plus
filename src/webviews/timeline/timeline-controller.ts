@@ -153,29 +153,7 @@ export class TimelineController implements Refresher {
         await repos.setAccount(repo, m.accountId);
         await this.refresh();
       })
-      .on("openNativeDiff", async (m) => {
-        const repo = repos.getPrimary();
-        if (!repo) {
-          notifier.warn("No repository selected");
-          return;
-        }
-        if (!m.hash) {
-          if (m.filePath) {
-            await nativeDiff.openWorkingFile(repo, m.filePath);
-          }
-          return;
-        }
-        if (m.filePath) {
-          await nativeDiff.openCommitFile(repo, m.hash, m.filePath);
-          return;
-        }
-        const detail = await this.data.getCommitDetail(m.hash);
-        await nativeDiff.openCommit(
-          repo,
-          m.hash,
-          detail.files.map((file) => file.path),
-        );
-      })
+      .on("openNativeDiff", (m) => this.openInEditor(m))
       .on("addLocalRepository", async () => {
         await repos.addLocal();
         await this.refresh();
@@ -195,7 +173,11 @@ export class TimelineController implements Refresher {
       .on("stashPush", (m) => stash.push(m.message))
       .on("stashApply", (m) => stash.apply(m.index, m.drop))
       .on("stashDrop", (m) => stash.drop(m.index))
-      .on("getWorkingDiff", (m) => working.workingDiff(m.filePath))
+      .on("getWorkingDiff", (m) =>
+        this.deps.settings().diff.view === "editor"
+          ? this.openInEditor({ filePath: m.filePath })
+          : working.workingDiff(m.filePath),
+      )
       .on("generateCommitMessage", () => message.generate())
       .on("fetch", busy("fetch", () => sync.fetch()))
       .on("pull", busy("pull", () => sync.pull()))
@@ -215,9 +197,21 @@ export class TimelineController implements Refresher {
       .on("openRepoOnGitHub", () => pr.openRepo())
       .on("loadMoreCommits", (m) => this.loadMore(m.offset))
       .on("getCommitDetails", (m) => diff.commitDetail(m.hash))
-      .on("selectCommit", (m) => diff.commitDetail(m.hash))
-      .on("getFileDiff", (m) => diff.fileDiff(m.hash, m.filePath))
-      .on("selectFile", (m) => diff.fileDiff(m.hash, m.path))
+      .on("selectCommit", (m) =>
+        this.deps.settings().diff.view === "editor"
+          ? this.openInEditor({ hash: m.hash })
+          : diff.commitDetail(m.hash),
+      )
+      .on("getFileDiff", (m) =>
+        this.deps.settings().diff.view === "editor"
+          ? this.openInEditor({ hash: m.hash, filePath: m.filePath })
+          : diff.fileDiff(m.hash, m.filePath),
+      )
+      .on("selectFile", (m) =>
+        this.deps.settings().diff.view === "editor"
+          ? this.openInEditor({ hash: m.hash, filePath: m.path })
+          : diff.fileDiff(m.hash, m.path),
+      )
       .on("resetToCommit", (m) => commitActions.reset(m.hash))
       .on("checkoutCommit", (m) => commitActions.checkout(m.hash))
       .on("revertCommit", (m) => commitActions.revert(m.hash))
@@ -225,6 +219,40 @@ export class TimelineController implements Refresher {
       .on("createBranchFromCommit", (m) => commitActions.branchFrom(m.hash))
       .on("createTagFromCommit", (m) => commitActions.tagFrom(m.hash))
       .on("viewCommitOnGitHub", (m) => commitActions.viewOnGitHub(m.hash));
+  }
+
+  /**
+   * @description Opens a diff in VS Code's own editor rather than the panel's
+   * pane: the working-tree diff of one file, one file of a commit, or every
+   * file a commit touched. Reached when the layout has no room for the pane and
+   * whenever `diff.view` is `editor`.
+   */
+  private async openInEditor(target: {
+    hash?: string;
+    filePath?: string;
+  }): Promise<void> {
+    const repo = this.deps.repos.getPrimary();
+    const { notifier, nativeDiff } = this.deps;
+    if (!repo) {
+      notifier.warn("No repository selected");
+      return;
+    }
+    if (!target.hash) {
+      if (target.filePath) {
+        await nativeDiff.openWorkingFile(repo, target.filePath);
+      }
+      return;
+    }
+    if (target.filePath) {
+      await nativeDiff.openCommitFile(repo, target.hash, target.filePath);
+      return;
+    }
+    const detail = await this.data.getCommitDetail(target.hash);
+    await nativeDiff.openCommit(
+      repo,
+      target.hash,
+      detail.files.map((file) => file.path),
+    );
   }
 
   /**
@@ -278,6 +306,13 @@ export class TimelineController implements Refresher {
       new Set(snapshot.changes.map((change) => change.path)).size,
       snapshot.repository.name,
     );
+
+    // Where diffs belong. Re-sent every refresh, so changing the setting takes
+    // effect in an already-open panel.
+    channel.post({
+      command: "updateDiffMode",
+      mode: this.deps.settings().diff.view,
+    });
 
     const draftRepo = this.deps.repos.getPrimary();
     channel.post({
