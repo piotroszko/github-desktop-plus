@@ -171,5 +171,6 @@ Bug reports and pull requests are welcome in
 
 ## License
 
-MIT. Copyright (c) 2025 Satyam Lohiya, the author of the original
-`vscode-github-desktop`; see [LICENSE](LICENSE).
+MIT. Copyright (c) 2025 Satyam Lohiya, author of the original
+`vscode-github-desktop`, and (c) 2026 Piotr Roszkowski for the changes in this
+fork. Both notices are retained in [LICENSE](LICENSE).

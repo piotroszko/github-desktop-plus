@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This changelog now names the extension in its header and links to its own
   releases, instead of introducing itself as the upstream extension and pointing
   at the upstream project's releases
+- `LICENSE` now carries the fork's own copyright (`Copyright (c) 2026 Piotr
+  Roszkowski`) below the original line, which MIT requires be retained in copies
+  and substantial portions of the work; the README's licence section names both
 
 ## [v2.0.0] - 2026-10-12
 
