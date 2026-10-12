@@ -97,6 +97,7 @@ export class RepositoryDataService {
       git,
       branch.current,
       remotes,
+      repo.baseBranch,
     );
 
     const changes = this.toChangeEntries(status);
@@ -120,6 +121,7 @@ export class RepositoryDataService {
         name: path.basename(repo.localPath),
         path: repo.localPath,
         remote: repo.remoteUrl,
+        baseBranch: repo.baseBranch ?? null,
       },
       remoteStatus,
       tags,
@@ -458,6 +460,7 @@ export class RepositoryDataService {
     git: ReturnType<GitClientFactory["plain"]>,
     currentBranch: string | undefined,
     remotes: Array<{ name: string }>,
+    baseBranch: string | undefined,
   ): Promise<RemoteStatus> {
     const empty: RemoteStatus = {
       hasRemote: remotes.length > 0,
@@ -471,9 +474,9 @@ export class RepositoryDataService {
       return { ...empty, hasRemote: false };
     }
 
-    let remoteBranch: string | null = null;
+    let upstream: string | null = null;
     try {
-      remoteBranch =
+      upstream =
         (
           await git.raw([
             "rev-parse",
@@ -483,7 +486,21 @@ export class RepositoryDataService {
           ])
         ).trim() || null;
     } catch {
-      remoteBranch = null;
+      upstream = null;
+    }
+
+    // An explicit base branch wins as the comparison ref — as long as it still
+    // exists, otherwise fall back to the tracked upstream.
+    let remoteBranch = upstream;
+    if (baseBranch) {
+      try {
+        // No `--quiet`: simple-git detects failures from stderr, and a silent
+        // failure would otherwise leave a stale base in place.
+        await git.raw(["rev-parse", "--verify", `${baseBranch}^{commit}`]);
+        remoteBranch = baseBranch;
+      } catch {
+        remoteBranch = upstream;
+      }
     }
     if (!remoteBranch) {
       return empty;
@@ -497,7 +514,7 @@ export class RepositoryDataService {
           "rev-list",
           "--left-right",
           "--count",
-          "@{upstream}...HEAD",
+          `${remoteBranch}...HEAD`,
         ])
       )
         .trim()
@@ -529,7 +546,7 @@ export class RepositoryDataService {
 
     return {
       hasRemote: true,
-      isPublished: true,
+      isPublished: upstream !== null,
       ahead,
       behind,
       lastFetched,

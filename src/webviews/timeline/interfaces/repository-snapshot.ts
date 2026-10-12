@@ -19,6 +19,8 @@ export interface RepositorySummary {
   name: string;
   path: string;
   remote?: string;
+  /** Explicit comparison base for this repository, `null` when following the upstream. */
+  baseBranch?: string | null;
 }
 
 /**

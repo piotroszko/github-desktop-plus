@@ -75,6 +75,12 @@
         "icon": "$(account)"
       },
       {
+        "command": "githubDesktopPlus.selectBaseBranch",
+        "title": "Select Base Branch for Repository",
+        "category": "GitHub Desktop Plus",
+        "icon": "$(git-compare)"
+      },
+      {
         "command": "githubDesktopPlus.useAccountForRepository",
         "title": "Use Account for Current Repository",
         "category": "GitHub Desktop Plus"
@@ -175,6 +181,16 @@
           "command": "githubDesktopPlus.selectRepositoryAccount",
           "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
           "group": "1_modification@1"
+        },
+        {
+          "command": "githubDesktopPlus.selectBaseBranch",
+          "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
+          "group": "inline@2"
+        },
+        {
+          "command": "githubDesktopPlus.selectBaseBranch",
+          "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
+          "group": "1_modification@2"
         },
         {
           "command": "githubDesktopPlus.signOutAccount",

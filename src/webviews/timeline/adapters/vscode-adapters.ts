@@ -219,6 +219,7 @@ export class AccountGitHubApi implements GitHubApi {
 
   async listPullRequests(
     repo: TrackedRepository,
+    base?: string | null,
   ): Promise<PullRequestSummary[]> {
     const slug = gitHubSlug(repo);
     if (!slug) {
@@ -235,6 +236,7 @@ export class AccountGitHubApi implements GitHubApi {
       sort: "updated",
       direction: "desc",
       per_page: 50,
+      ...(base ? { base } : {}),
     });
     return data.map((pr) => ({
       number: pr.number,

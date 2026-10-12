@@ -13,6 +13,7 @@ import { RepositoriesViewBadge } from "./ui/tree-views/changes-badge";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
 import { StoredAccount, TrackedRepository } from "./shared/types";
 import { getPrimaryRepository } from "./shared/utils/repo-selection";
+import { listBranchRefs } from "./shared/utils/git-branches";
 import { resolveRepositoryAccount } from "./shared/utils/repo-account";
 
 export async function activate(
@@ -135,6 +136,11 @@ export async function activate(
           timelineProvider,
           repo,
         ),
+    ),
+    vscode.commands.registerCommand(
+      "githubDesktopPlus.selectBaseBranch",
+      (repo?: TrackedRepository) =>
+        selectBaseBranch(repositoryManager, timelineProvider, repo),
     ),
     vscode.commands.registerCommand(
       "githubDesktopPlus.useAccountForRepository",
@@ -439,6 +445,64 @@ async function useAccountForRepository(
   await applyRepositoryAccount(repositories, timeline, repo, account.id);
   vscode.window.showInformationMessage(
     `${repo.owner}/${repo.name} now authenticates as ${account.login}.`,
+  );
+}
+
+/**
+ * @description Picks the branch the extension compares against for one
+ * repository — the ahead/behind numbers in the sync cell, the pull-request
+ * compare link and the pull-request list. It is an extension setting only: the
+ * repository's tracked upstream, and therefore push and pull, stay untouched.
+ */
+async function selectBaseBranch(
+  repositories: RepositoryManager,
+  timeline: TimelineViewProvider,
+  repoArg?: TrackedRepository,
+): Promise<void> {
+  const repo = repoArg ?? (await pickRepository(repositories));
+  if (!repo) {
+    vscode.window.showInformationMessage("Select or clone a repository first.");
+    return;
+  }
+
+  const refs = await listBranchRefs(repo.localPath);
+  if (refs.length === 0) {
+    vscode.window.showInformationMessage(
+      "This repository has no branches to compare against yet.",
+    );
+    return;
+  }
+
+  const items: (vscode.QuickPickItem & { ref?: string })[] = [
+    ...(repo.baseBranch
+      ? [
+          {
+            label: "$(sync) Follow the tracked branch",
+            description: `currently ${repo.baseBranch}`,
+          },
+        ]
+      : []),
+    ...refs.map((ref) => ({
+      label: ref,
+      description: ref === repo.baseBranch ? "current base" : "",
+      ref,
+    })),
+  ];
+
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: `Compare ${repo.owner}/${repo.name} against…`,
+    ignoreFocusOut: true,
+  });
+  if (!picked) {
+    return;
+  }
+
+  await repositories.updateRepository(repo.id, { baseBranch: picked.ref });
+  await timeline.refresh();
+  vscode.window.showInformationMessage(
+    picked.ref
+      ? `${repo.owner}/${repo.name} now compares against ${picked.ref}.`
+      : `${repo.owner}/${repo.name} follows its tracked branch again.`,
   );
 }
 

@@ -153,7 +153,15 @@ export interface GitHubApi {
    * @throws when no GitHub account is signed in or the repo has no
    *   `owner`/`name` resolvable to a GitHub slug.
    */
-  listPullRequests(repo: TrackedRepository): Promise<PullRequestSummary[]>;
+  /**
+   * @param repo - Repository to read from
+   * @param base - Only pull requests targeting this branch (the repository's
+   *   chosen base), or `null` for every open pull request
+   */
+  listPullRequests(
+    repo: TrackedRepository,
+    base?: string | null,
+  ): Promise<PullRequestSummary[]>;
 
   /**
    * Maps commit SHA to the committer's GitHub avatar URL, for commits near

@@ -732,6 +732,10 @@ function renderToolbar() {
   else if (mode === "pull") { label.textContent = "Pull origin"; sub.textContent = relFetched(r.lastFetched); count.hidden = false; count.textContent = "↓ " + r.behind; }
   else if (mode === "push") { label.textContent = "Push origin"; sub.textContent = relFetched(r.lastFetched); count.hidden = false; count.textContent = "↑ " + r.ahead; }
   else { label.textContent = "Fetch origin"; sub.textContent = relFetched(r.lastFetched); }
+  const comparedWith = baseBranchName();
+  if (comparedWith) {
+    sub.textContent = sub.textContent + " · base " + comparedWith;
+  }
   cell.title = sub.textContent;
   cell.dataset.mode = mode;
 }
@@ -837,6 +841,9 @@ function saveDraft(now) {
   if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
   if (now) { post("updateDraft", { path: state.draftPath, draft: currentDraft() }); return; }
   draftTimer = setTimeout(() => { draftTimer = null; saveDraft(true); }, 400);
+}
+function baseBranchName() {
+  return (state.repository && state.repository.baseBranch) || null;
 }
 function uniquePaths(entries) {
   const paths = new Set();
@@ -1537,6 +1544,10 @@ $("branchCell").onclick = () => {
       mkAction("⑂  Merge into current branch…", startMergeBranch);
     }
     if (state.currentBranch) mkAction("⇡  Create pull request…", () => post("createPullRequest", { branch: state.currentBranch }));
+    const base = baseBranchName();
+    if (base && base !== state.currentBranch) {
+      mkAction("⇄  Compare with " + base, () => post("compareBranch", { branch: base }));
+    }
     if (state.changes.length > 0) mkAction("⇩  Stash all changes", () => post("stashPush", { message: "" }));
     for (const s of state.stashes) {
       const it = document.createElement("div");
@@ -1557,13 +1568,17 @@ $("branchCell").onclick = () => {
     const draw = () => {
       const q = filter.value.trim().toLowerCase();
       holder.innerHTML = "";
-      const items = state.branches.filter((b) => !q || b.toLowerCase().indexOf(q) >= 0);
+      const base = baseBranchName();
+      const items = state.branches
+        .filter((b) => !q || b.toLowerCase().indexOf(q) >= 0)
+        .sort((a, b) => (a === base ? -1 : b === base ? 1 : 0));
       if (!items.length) { holder.innerHTML = '<div class="menu-empty">No branches</div>'; return; }
       for (const b of items) {
         const it = document.createElement("div");
         const isCur = b === state.currentBranch;
         it.className = "menu-item" + (isCur ? " is-current" : "");
-        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + (isCur ? "  (current)" : "") + '</span>';
+        const suffix = isCur ? "  (current)" : b === base ? "  (base)" : "";
+        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + suffix + '</span>';
         it.onclick = () => { closeMenu(); if (!isCur) post("checkoutBranch", { branch: b }); };
         if (!isCur) {
           const cmp = document.createElement("button");
@@ -1667,7 +1682,10 @@ function startMergeBranch() {
     filter.className = "menu-filter"; filter.placeholder = "Find a branch to merge…";
     m.appendChild(filter);
     const holder = document.createElement("div"); m.appendChild(holder);
-    const candidates = state.branches.filter((b) => b !== state.currentBranch);
+    const base = baseBranchName();
+    const candidates = state.branches
+      .filter((b) => b !== state.currentBranch)
+      .sort((a, b) => (a === base ? -1 : b === base ? 1 : 0));
     const draw = () => {
       const q = filter.value.trim().toLowerCase();
       holder.innerHTML = "";
@@ -1676,7 +1694,7 @@ function startMergeBranch() {
       for (const b of items) {
         const it = document.createElement("div");
         it.className = "menu-item";
-        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + '</span>';
+        it.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(b) + (b === base ? "  (base)" : "") + '</span>';
         it.onclick = () => {
           closeMenu();
           post("mergeBranch", { fromBranch: b, toBranch: state.currentBranch });

@@ -1,5 +1,8 @@
 import { GitClientFactory } from "../../../core/git/git-authenticator";
-import { toGitHubWebUrl } from "../../../shared/utils/github-url";
+import {
+  toGitHubBranchName,
+  toGitHubWebUrl,
+} from "../../../shared/utils/github-url";
 import {
   Browser,
   GitHubApi,
@@ -30,12 +33,16 @@ export class PullRequestService extends RepositoryScopedService {
 
   openCompare(branch: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const base = toGitHubWebUrl(repo.remoteUrl);
-      if (!base) {
+      const remote = toGitHubWebUrl(repo.remoteUrl);
+      if (!remote) {
         this.notifier.warn("No GitHub remote configured");
         return;
       }
-      this.browser.open(`${base}/compare/${branch}?expand=1`);
+      // Compare against the repository's chosen base when it has one: that is
+      // often not the default branch GitHub would pick.
+      const base = toGitHubBranchName(repo.baseBranch);
+      const compare = base ? `${base}...${branch}` : branch;
+      this.browser.open(`${remote}/compare/${compare}?expand=1`);
     });
   }
 
@@ -55,7 +62,10 @@ export class PullRequestService extends RepositoryScopedService {
   list(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       try {
-        const pullRequests = await this.api.listPullRequests(repo);
+        const pullRequests = await this.api.listPullRequests(
+          repo,
+          toGitHubBranchName(repo.baseBranch),
+        );
         this.channel.post({ command: "updatePullRequests", pullRequests });
       } catch (error) {
         this.channel.post({

@@ -17,6 +17,12 @@ export interface TrackedRepository {
   localPath: string;
   remoteUrl?: string;
   accountId?: string;
+  /**
+   * Branch the extension compares against (ahead/behind, today's sync state,
+   * pull-request base) instead of the branch's tracked upstream. A git ref, e.g.
+   * `origin/develop`. Unset means "follow the tracked upstream".
+   */
+  baseBranch?: string;
 }
 
 /**
