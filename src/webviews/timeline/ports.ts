@@ -17,6 +17,14 @@ export interface RepositoryContext {
    * never changed.
    */
   setActive(localPath: string): Promise<void>;
+  /**
+   * Pins the account `repo` authenticates as, or — with `accountId` undefined —
+   * makes it follow the extension's active account.
+   */
+  setAccount(
+    repo: TrackedRepository,
+    accountId: string | undefined,
+  ): Promise<void>;
   /** Prompts for a local folder and tracks it as a repository. */
   addLocal(): Promise<void>;
   /** Runs the "clone repository" flow. */

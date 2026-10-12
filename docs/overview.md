@@ -85,9 +85,11 @@ GitHub API calls (pull requests, commit avatars) go through
 Each tracked repository carries an optional `accountId`:
 
 - set explicitly with **GitHub Desktop: Select Account for Repository** (also on
-  the Repositories tree item) — that account authenticates the repository's
-  fetch/pull/push/publish, tag pushes, PR checkout and issue/PR API calls, even
-  while a different account is active;
+  the Repositories tree item), with **Use Account for Current Repository** on an
+  account in the Accounts tree, or from the account menu behind the History
+  panel's avatar (next to the commit summary) — that account authenticates the
+  repository's fetch/pull/push/publish, tag pushes, PR checkout and issue/PR API
+  calls, even while a different account is active;
 - cleared with the picker's "Follow the active account" entry, which makes the
   repository track whichever account is active;
 - falling back to the active account automatically when the selected account is

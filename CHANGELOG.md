@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extension's active account; the picker's "Follow the active account" entry
   clears the pin. A signed-out selection falls back to the active account, and
   the Repositories tree shows the effective account per repo
+- "Use Account for Current Repository" on the **Accounts** tree context menu:
+  applies that account to the repository the extension is currently working on
+- The History panel's account avatar (next to the commit summary) is now a
+  button that opens an account menu for the current repository, marking the
+  `active` and `selected` accounts and offering "Follow the active account".
+  All three surfaces write the same per-repository default
 
 ### Fixed
 - The account avatar next to the commit summary in the History panel now

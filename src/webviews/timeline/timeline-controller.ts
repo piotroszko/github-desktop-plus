@@ -89,6 +89,15 @@ export class TimelineController implements Refresher {
         await repos.setActive(m.path);
         await this.refresh();
       })
+      .on("selectRepoAccount", async (m) => {
+        const repo = repos.getPrimary();
+        if (!repo) {
+          notifier.warn("No repository selected");
+          return;
+        }
+        await repos.setAccount(repo, m.accountId);
+        await this.refresh();
+      })
       .on("addLocalRepository", async () => {
         await repos.addLocal();
         await this.refresh();
@@ -194,9 +203,11 @@ export class TimelineController implements Refresher {
     });
 
     const repo = this.deps.repos.getPrimary();
+    const activeAccount = accounts.getActiveAccount();
     const account = repo
       ? resolveRepositoryAccount(accounts, repo)
-      : accounts.getActiveAccount();
+      : activeAccount;
+    const pinnedAccountId = repo?.accountId ?? null;
     channel.post({
       command: "updateAccounts",
       account: account
@@ -206,6 +217,14 @@ export class TimelineController implements Refresher {
             avatarUrl: account.avatarUrl,
           }
         : null,
+      accounts: accounts.getAccounts().map((candidate) => ({
+        id: candidate.id,
+        login: candidate.login,
+        avatarUrl: candidate.avatarUrl,
+        active: candidate.id === activeAccount?.id,
+        selected: candidate.id === pinnedAccountId,
+      })),
+      pinnedAccountId,
     });
 
     channel.post({

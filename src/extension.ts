@@ -8,7 +8,8 @@ import { RepositoryManager } from "./core/repositories/repository-manager";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
 import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
-import { TrackedRepository } from "./shared/types";
+import { StoredAccount, TrackedRepository } from "./shared/types";
+import { getPrimaryRepository } from "./shared/utils/repo-selection";
 import { resolveRepositoryAccount } from "./shared/utils/repo-account";
 
 export async function activate(
@@ -95,6 +96,16 @@ export async function activate(
           repositoryManager,
           timelineProvider,
           repo,
+        ),
+    ),
+    vscode.commands.registerCommand(
+      "githubDesktop.useAccountForRepository",
+      (item?: { account?: StoredAccount }) =>
+        useAccountForRepository(
+          accountManager,
+          repositoryManager,
+          timelineProvider,
+          item?.account?.id,
         ),
     ),
     vscode.commands.registerCommand("githubDesktop.createIssue", () =>
@@ -328,6 +339,72 @@ async function openRepository(
 }
 
 /**
+ * @description Pins `accountId` — or, with `undefined`, "follow the active
+ * account" — as the account `repo` authenticates as, then repaints the panel.
+ * Every account-selection surface (picker command, Accounts tree, History
+ * avatar menu) funnels through here, so they cannot disagree.
+ */
+async function applyRepositoryAccount(
+  repositories: RepositoryManager,
+  timeline: TimelineViewProvider,
+  repo: TrackedRepository,
+  accountId: string | undefined,
+): Promise<void> {
+  await repositories.updateRepository(repo.id, { accountId });
+  await timeline.refresh();
+}
+
+/**
+ * @description Accounts tree entry ("Use Account for Current Repository"):
+ * applies one account to whichever repository the extension is currently
+ * working on. Falls back to an account picker when invoked without an account
+ * (e.g. from the command palette).
+ */
+async function useAccountForRepository(
+  accounts: AccountManager,
+  repositories: RepositoryManager,
+  timeline: TimelineViewProvider,
+  accountIdArg?: string,
+): Promise<void> {
+  const repo = getPrimaryRepository(repositories);
+  if (!repo) {
+    vscode.window.showInformationMessage("Select or clone a repository first.");
+    return;
+  }
+
+  let account: StoredAccount | undefined;
+  if (accountIdArg) {
+    account = accounts.getAccountById(accountIdArg);
+    if (!account) {
+      vscode.window.showErrorMessage("Account not found.");
+      return;
+    }
+  } else {
+    const active = accounts.getActiveAccount();
+    const picked = await vscode.window.showQuickPick(
+      accounts.getAccounts().map((candidate) => ({
+        label: candidate.login,
+        description: candidate.id === active?.id ? "active" : "",
+        account: candidate,
+      })),
+      {
+        placeHolder: `Account for ${repo.owner}/${repo.name}`,
+        ignoreFocusOut: true,
+      },
+    );
+    account = picked?.account;
+  }
+  if (!account) {
+    return;
+  }
+
+  await applyRepositoryAccount(repositories, timeline, repo, account.id);
+  vscode.window.showInformationMessage(
+    `${repo.owner}/${repo.name} now authenticates as ${account.login}.`,
+  );
+}
+
+/**
  * @description Picks the GitHub account a single repository authenticates as.
  * Scoping is per-repository only: it never changes the extension's active
  * account, so other repositories keep the account they were using.
@@ -386,10 +463,7 @@ async function selectRepositoryAccount(
     return;
   }
 
-  await repositories.updateRepository(repo.id, {
-    accountId: picked.accountId,
-  });
-  await timeline.refresh();
+  await applyRepositoryAccount(repositories, timeline, repo, picked.accountId);
 
   const effective = resolveRepositoryAccount(accounts, repo);
   vscode.window.showInformationMessage(

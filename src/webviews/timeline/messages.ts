@@ -24,6 +24,11 @@ export type InboundMessage =
   | { command: "ready" }
   | { command: "refresh" }
   | { command: "selectRepository"; path: string }
+  | {
+      command: "selectRepoAccount";
+      /** Account to pin the active repository to; omit to follow the active account. */
+      accountId?: string;
+    }
   | { command: "addLocalRepository" }
   | { command: "cloneRepository" }
   | { command: "stageFiles"; files: string[] }
@@ -110,6 +115,18 @@ export type OutboundMessage =
         name?: string;
         avatarUrl?: string;
       } | null;
+      /** Every signed-in account, for the avatar's account menu. */
+      accounts: {
+        id: string;
+        login: string;
+        avatarUrl?: string;
+        /** The extension-wide active account. */
+        active: boolean;
+        /** The account currently pinned on the active repository. */
+        selected: boolean;
+      }[];
+      /** The active repository's pinned account, or `null` when it follows the active one. */
+      pinnedAccountId: string | null;
     }
   | {
       command: "updateRemoteStatus";

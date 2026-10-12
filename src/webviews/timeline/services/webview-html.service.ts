@@ -107,7 +107,7 @@ ${STYLES}
       </div>
       <div id="commitBox">
         <div class="commit-summary">
-          <span class="avatar" id="avatar">?</span>
+          <button type="button" class="avatar" id="avatar" title="Account for this repository">?</button>
           <input id="summary" type="text" placeholder="Summary (required)" autocomplete="off">
         </div>
         <textarea id="description" placeholder="Description"></textarea>
@@ -349,7 +349,9 @@ body.narrow #right { display: none; }
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   background: var(--gd-accent); color: var(--gd-accent-fg);
+  border: 0; padding: 0; cursor: pointer;
 }
+.avatar:hover { outline: 1px solid var(--vscode-focusBorder, var(--gd-border)); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 #summary, #description {
   width: 100%; padding: 6px 9px; border-radius: var(--gd-radius); font-size: 12px;
@@ -595,6 +597,8 @@ const state = {
   repositories: [],
   activeRepoPath: null,
   account: null,
+  accounts: [],
+  accountPinned: false,
   changes: [],
   history: [],
   branches: [],
@@ -1480,6 +1484,45 @@ $("repoCell").onclick = () => {
   });
 };
 
+$("avatar").onclick = () => {
+  openMenu($("avatar"), (m) => {
+    const head = document.createElement("div");
+    head.className = "menu-empty";
+    head.textContent = "Account for this repository";
+    m.appendChild(head);
+    const accounts = state.accounts || [];
+    if (!accounts.length) {
+      const none = document.createElement("div");
+      none.className = "menu-empty";
+      none.textContent = "No GitHub account signed in";
+      m.appendChild(none);
+      return;
+    }
+    for (const acc of accounts) {
+      const flags = [];
+      if (acc.selected) flags.push("selected");
+      if (acc.active) flags.push("active");
+      const it = document.createElement("div");
+      it.className = "menu-item" + (acc.selected ? " is-current" : "");
+      it.innerHTML = '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">' +
+        esc(acc.login) + (flags.length ? "  (" + esc(flags.join(", ")) + ")" : "") + "</span>";
+      it.onclick = () => {
+        closeMenu();
+        if (!acc.selected) post("selectRepoAccount", { accountId: acc.id });
+      };
+      m.appendChild(it);
+    }
+    if (state.accountPinned) {
+      const sep = document.createElement("div"); sep.className = "menu-sep"; m.appendChild(sep);
+      const follow = document.createElement("div");
+      follow.className = "menu-item";
+      follow.textContent = "Follow the active account";
+      follow.onclick = () => { closeMenu(); post("selectRepoAccount", {}); };
+      m.appendChild(follow);
+    }
+  });
+};
+
 /* ---------- inbound messages ---------- */
 window.addEventListener("message", (ev) => {
   const msg = ev.data || {};
@@ -1579,6 +1622,8 @@ window.addEventListener("message", (ev) => {
       break;
     case "updateAccounts":
       state.account = msg.account || null;
+      state.accounts = msg.accounts || [];
+      state.accountPinned = !!msg.pinnedAccountId;
       setAvatar();
       break;
     case "updateRemoteStatus":
@@ -1617,14 +1662,15 @@ window.addEventListener("message", (ev) => {
 function setAvatar() {
   const a = state.account;
   const el = $("avatar");
+  const tip = "Click to choose the account for this repository";
   if (a && a.avatarUrl) {
     el.innerHTML = '<img alt="" src="' + esc(a.avatarUrl) + '">';
-    el.title = a.login || "";
+    el.title = (a.login ? a.login + "\n" : "") + tip;
     return;
   }
   const s = (a && (a.name || a.login)) || (state.repository && state.repository.name) || "?";
   el.textContent = s.slice(0, 2);
-  el.title = (a && a.login) || "";
+  el.title = (a && a.login ? a.login + "\n" : "") + tip;
 }
 applyWidth();
 setAvatar();

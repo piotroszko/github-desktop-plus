@@ -74,6 +74,11 @@
         "icon": "$(account)"
       },
       {
+        "command": "githubDesktop.useAccountForRepository",
+        "title": "Use Account for Current Repository",
+        "category": "GitHub Desktop"
+      },
+      {
         "command": "githubDesktop.createIssue",
         "title": "GitHub Desktop: Create Issue",
         "category": "GitHub Desktop"
@@ -139,6 +144,16 @@
     },
     "menus": {
       "view/item/context": [
+        {
+          "command": "githubDesktop.useAccountForRepository",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account",
+          "group": "1_modification@1"
+        },
+        {
+          "command": "githubDesktop.useAccountForRepository",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount",
+          "group": "1_modification@1"
+        },
         {
           "command": "githubDesktop.selectRepositoryAccount",
           "when": "view == githubDesktop.repositories && viewItem == githubDesktop.repository",

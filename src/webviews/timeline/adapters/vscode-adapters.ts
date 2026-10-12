@@ -39,6 +39,13 @@ export class WorkspaceRepositoryContext implements RepositoryContext {
     this.repositories.setActiveRepository(localPath);
   }
 
+  async setAccount(
+    repo: TrackedRepository,
+    accountId: string | undefined,
+  ): Promise<void> {
+    await this.repositories.updateRepository(repo.id, { accountId });
+  }
+
   async addLocal(): Promise<void> {
     const picked = await vscode.window.showOpenDialog({
       canSelectFiles: false,

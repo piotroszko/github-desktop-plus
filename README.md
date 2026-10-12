@@ -72,7 +72,7 @@
 - **Secure token storage** using VS Code Secret Storage API
 - **GitHub CLI integration** with automatic account detection
 - **One-click account switching** directly from accounts panel
-- **Per-repository account selection** — pin a repo to a specific account (right-click it in the Repositories panel) while other repos keep using the active account
+- **Per-repository account selection** — pin a repo to a specific account (right-click it in the Repositories panel, right-click an account in the Accounts panel, or click the avatar next to the commit summary) while other repos keep using the active account
 - **Account-specific operations** with proper isolation
 - **Smart CLI account selection** with guided switching process
 
@@ -152,6 +152,7 @@ Access these commands via Command Palette (`Ctrl+Shift+P`):
 - `GitHub Desktop: Clone Repository` - Clone a repo with account selection
 - `GitHub Desktop: Open Repository` - Open any tracked repository
 - `GitHub Desktop: Select Account for Repository` - Choose which account a single repository authenticates as
+- `GitHub Desktop: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
 - `GitHub Desktop: Create Issue` - Create GitHub issues directly
 - `GitHub Desktop: Refresh Views` - Refresh all panels
 
