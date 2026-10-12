@@ -103,6 +103,22 @@ those files are committed; with nothing staged, the ticked files are staged and
 committed together (`commitFiles`). `amendCommit` follows the same rule — it
 adds no extra paths when the index already holds changes.
 
+## Commit message generation
+
+The commit box's Generate button runs `MessageGenerator` — by default
+`CliCommitMessageGenerator` (`src/core/git/commit-message.ts`), which spawns
+`githubDesktopPlus.commitMessageCommand` (`omp` by default) with
+`commitMessageArgs` plus a built-in prompt, writes the diff to its stdin and reads
+the message from stdout. No shell is involved, there is a 120 s kill timer, and a
+missing binary, non-zero exit or empty answer is reported to the user.
+
+`CommitMessageService` picks the diff: `git diff --cached` when anything is
+staged, otherwise `git diff HEAD` (untracked files are in neither, so they must
+be staged first). `parseGeneratedMessage` tolerates code fences, quotes and
+`Subject:` chatter, and `fitMessage` enforces {@link MAX_MESSAGE_LENGTH} = 100
+characters over the whole message — dropping the body first, then clamping the
+subject on a word boundary with an ellipsis.
+
 ## Base branch (what the extension compares against)
 
 `TrackedRepository.baseBranch` is an optional git ref (`origin/develop`) picked

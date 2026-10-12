@@ -152,6 +152,23 @@
     "configuration": {
       "title": "GitHub Desktop Plus",
       "properties": {
+        "githubDesktopPlus.commitMessageCommand": {
+          "type": "string",
+          "default": "omp",
+          "description": "Command behind the Generate button next to the commit Summary field. It receives the diff on stdin and must print the commit message on stdout."
+        },
+        "githubDesktopPlus.commitMessageArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-p",
+            "--model",
+            "commit"
+          ],
+          "description": "Arguments passed to the commit message command, before the built-in prompt. The prompt asks for a conventional-commit subject (feat:, fix:, …) and keeps the whole message within 100 characters."
+        },
         "githubDesktopPlus.autoRefreshInterval": {
           "type": "number",
           "default": 30,

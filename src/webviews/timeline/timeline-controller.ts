@@ -8,6 +8,7 @@ import {
   Browser,
   ChangesBadge,
   DraftStore,
+  MessageGenerator,
   GitHubApi,
   NativeDiff,
   Notifier,
@@ -22,6 +23,7 @@ import { DiffService } from "./services/diff.service";
 import { PullRequestService } from "./services/pull-request.service";
 import { RepositoryDataService } from "./services/repository-data.service";
 import { StashService } from "./services/stash.service";
+import { CommitMessageService } from "./services/commit-message.service";
 import { SyncService } from "./services/sync.service";
 import { WorkingTreeService } from "./services/working-tree.service";
 
@@ -59,6 +61,7 @@ export class TimelineController implements Refresher {
       nativeDiff: NativeDiff;
       drafts: DraftStore;
       badge: ChangesBadge;
+      generator: MessageGenerator;
     },
   ) {
     const { repos, notifier, channel, browser, git, nativeDiff, drafts } = deps;
@@ -87,6 +90,13 @@ export class TimelineController implements Refresher {
     const diff = new DiffService(repos, notifier, git, this.data, channel);
     const conflict = new ConflictService(repos, notifier, git, this);
     const stash = new StashService(repos, notifier, git, this);
+    const message = new CommitMessageService(
+      repos,
+      notifier,
+      git,
+      channel,
+      deps.generator,
+    );
 
     // Long-running operations announce themselves so the webview can disable
     // and animate the button that started them until they settle.
@@ -160,6 +170,7 @@ export class TimelineController implements Refresher {
       .on("stashApply", (m) => stash.apply(m.index, m.drop))
       .on("stashDrop", (m) => stash.drop(m.index))
       .on("getWorkingDiff", (m) => working.workingDiff(m.filePath))
+      .on("generateCommitMessage", () => message.generate())
       .on("fetch", busy("fetch", () => sync.fetch()))
       .on("pull", busy("pull", () => sync.pull()))
       .on("push", busy("push", () => sync.push()))

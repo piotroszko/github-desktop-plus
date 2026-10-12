@@ -85,6 +85,7 @@
 - **GitHub integration** for direct repository links and issue creation
 
 ### 📱 **Changes & History Panel**
+- **Generate commit message** - a small button beside the Summary field drafts the message from the staged diff (or all changes) through an agent CLI such as `omp`, with a `feat:`/`fix:`/… prefix and a 100-character cap
 - **Activity bar badge** - the icon shows how many files have uncommitted changes in the active repository, and clears when the tree is clean
 - **VS Code Source Control UI** - Exact replica of native source control
 - **Collapsible sections** for staged and unstaged changes
@@ -164,6 +165,8 @@ Access these commands via Command Palette (`Ctrl+Shift+P`):
 
 ### **⚙️ Settings**
 
+- `githubDesktopPlus.commitMessageCommand` (string, default `omp`) - command behind the Generate button; it gets the diff on stdin and must print the message on stdout.
+- `githubDesktopPlus.commitMessageArgs` (array, default `["-p", "--model", "commit"]`) - arguments passed to that command, before the built-in prompt.
 - `githubDesktopPlus.autoRefreshInterval` (number, default `30`) - Seconds between automatic refreshes of the History panel while it is visible. Set to `0` to disable periodic refreshes; the panel still refreshes when it regains focus or a file is saved in VS Code.
 
 ### **🎨 Keyboard & Mouse Shortcuts**

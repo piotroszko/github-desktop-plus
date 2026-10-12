@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would orphan existing repositories and tokens)
 
 ### Added
+- **Generate commit message** button next to the commit Summary field: pipes the
+  diff into an agent CLI (default `omp -p --model commit`, configurable with
+  `githubDesktopPlus.commitMessageCommand` / `commitMessageArgs`) and fills the
+  message in. The prompt asks for a conventional-commit subject (`feat:`,
+  `fix:`, `docs:`, …) and the whole message is kept within **100 characters** —
+  the body is dropped first when it does not fit, and a still-too-long subject is
+  clamped on a word boundary with an ellipsis. The diff is the staged one when
+  anything is staged, otherwise everything that differs from `HEAD`; nothing is
+  read from or written to the index. The button spins while it works, and
+  failures (missing CLI, non-zero exit, timeout, nothing to describe) come back
+  as a notification
 - **Select Base Branch for Repository** (`githubDesktopPlus.selectBaseBranch`, on
   the Repositories tree item and in the palette): pick the branch the extension
   compares against when the tracked upstream is not the branch you work with

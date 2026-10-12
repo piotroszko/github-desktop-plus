@@ -1,4 +1,8 @@
-import { CommitDraft, TrackedRepository } from "../../shared/types";
+import {
+  CommitDraft,
+  GeneratedMessage,
+  TrackedRepository,
+} from "../../shared/types";
 import { OutboundMessage } from "./messages";
 
 /**
@@ -53,6 +57,20 @@ export interface NativeDiff {
     hash: string,
     files: string[],
   ): Promise<void>;
+}
+
+/**
+ * @description Turns a diff into a commit message — the agent CLI behind the
+ * commit box's Generate button.
+ */
+export interface MessageGenerator {
+  /**
+   * @param diff - The changes to describe
+   * @returns The generated message, or `null` when the command said nothing
+   *   usable
+   * @throws When the command is missing, fails, or times out
+   */
+  generate(diff: string): Promise<GeneratedMessage | null>;
 }
 
 /**

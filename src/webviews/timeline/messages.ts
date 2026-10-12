@@ -30,6 +30,7 @@ export type InboundMessage =
       /** Account to pin the active repository to; omit to follow the active account. */
       accountId?: string;
     }
+  | { command: "generateCommitMessage" }
   | {
       command: "updateDraft";
       /** Repository the draft belongs to (the webview's current one). */
@@ -113,6 +114,15 @@ export type BusyTask =
 
 export type OutboundMessage =
   | { command: "busy"; task: BusyTask | null }
+  | {
+      command: "commitMessage";
+      /** Generated subject, or `null` when generation failed. */
+      summary: string | null;
+      /** Generated body, when the model returned one. */
+      description: string | null;
+      /** Why generation failed, or `null` on success. */
+      error: string | null;
+    }
   | { command: "draft"; path: string | null; draft: CommitDraft | null }
   | { command: "updateRepository"; repository: RepositorySummary | null }
   | {

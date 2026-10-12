@@ -38,3 +38,14 @@ export interface CommitDraft {
    * same as an absent draft (that defaults to everything ticked). */
   selected?: string[];
 }
+
+/**
+ * @description A commit message produced for the user (by the configured agent
+ * CLI, or typed by hand before being read back).
+ */
+export interface GeneratedMessage {
+  /** First line: the subject, e.g. `feat: add base branch picker`. */
+  summary: string;
+  /** Everything after the subject, or `null` when the model sent only a subject. */
+  description: string | null;
+}

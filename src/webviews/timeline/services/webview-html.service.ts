@@ -117,6 +117,7 @@ ${STYLES}
         <div class="commit-summary">
           <button type="button" class="avatar" id="avatar" title="Account for this repository">?</button>
           <input id="summary" type="text" placeholder="Summary (required)" autocomplete="off">
+          <button id="genSummary" class="row-btn" type="button" title="Draft a commit message from the staged changes (feat:, fix:, … — max 100 characters)">${ICON.wand}</button>
         </div>
         <textarea id="description" placeholder="Description"></textarea>
         <input id="coAuthors" type="text" hidden autocomplete="off"
@@ -184,6 +185,7 @@ const ICON = {
   push: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 1.5 3.75 5.75l1.06 1.06L7.25 4.4v7.35h1.5V4.4l2.44 2.41 1.06-1.06Z"/></svg>`,
   pull: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 14.5 3.75 10.25l1.06-1.06L7.25 11.6V4.25h1.5v7.35l2.44-2.41 1.06 1.06Z"/></svg>`,
   publish: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 1 4 5h2.5v5h3V5H12ZM3 12.5h10V14H3Z"/></svg>`,
+  wand: `<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M6 1.2 7.15 4.35 10.3 5.5 7.15 6.65 6 9.8 4.85 6.65 1.7 5.5 4.85 4.35ZM11.4 8.6l.75 2.05 2.05.75-2.05.75-.75 2.05-.75-2.05-2.05-.75 2.05-.75Z"/></svg>`,
   spinner: `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6" opacity=".3"/><path d="M14 8a6 6 0 0 0-6-6"/></svg>`,
   caret: `<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4 6l4 4 4-4Z"/></svg>`,
   plus: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>`,
@@ -242,7 +244,7 @@ button, input, textarea { font: inherit; color: inherit; }
 /* Long-running operations: a rotating arc next to the label. */
 .spin { animation: gd-spin .9s linear infinite; }
 @keyframes gd-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .spin, .row-btn.is-busy svg { animation: none; } }
 .cell-ico { flex: 0 0 auto; display: flex; opacity: .75; }
 .cell-ico svg { width: 13px; height: 13px; }
 .cell-text { display: flex; min-width: 0; }
@@ -378,6 +380,9 @@ body.narrow #right { display: none; }
   background: transparent; color: var(--vscode-foreground); opacity: .7;
 }
 .row-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,.2)); }
+.row-btn:disabled { cursor: default; opacity: .8; }
+.row-btn.is-busy svg { animation: gd-spin .9s linear infinite; }
+#genSummary { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) { .group-toggle svg { transition: none; } }
 
 /* ---- commit box (pinned to the bottom of the panel) ---- */
@@ -811,7 +816,7 @@ function visibleChanges() {
   return state.changes.filter((c) => !f || c.path.toLowerCase().indexOf(f) >= 0);
 }
 const INITIAL_DRAFT = (window.__INITIAL__ && window.__INITIAL__.draft) || null;
-const ACTIONS = { plus: ${JSON.stringify(ICON.plus)}, minus: ${JSON.stringify(ICON.minus)}, discard: ${JSON.stringify(ICON.discard)}, caret: ${JSON.stringify(ICON.caret)} };
+const ACTIONS = { plus: ${JSON.stringify(ICON.plus)}, minus: ${JSON.stringify(ICON.minus)}, discard: ${JSON.stringify(ICON.discard)}, caret: ${JSON.stringify(ICON.caret)}, wand: ${JSON.stringify(ICON.wand)}, spinner: ${JSON.stringify(ICON.spinner)} };
 /* ---------- commit draft persistence ---------- */
 function applyDraft(draft, path) {
   const d = draft || {};
@@ -1101,6 +1106,19 @@ function updateCommitBtn() {
   }
 }
 $("summary").oninput = () => { updateCommitBtn(); saveDraft(); };
+let generating = false;
+function setGenerating(on) {
+  generating = on;
+  const btn = $("genSummary");
+  btn.disabled = on;
+  btn.classList.toggle("is-busy", on);
+  btn.innerHTML = on ? ACTIONS.spinner : ACTIONS.wand;
+}
+$("genSummary").onclick = () => {
+  if (generating) return;
+  setGenerating(true);
+  post("generateCommitMessage");
+};
 $("description").oninput = () => saveDraft();
 function doCommit() {
   const summary = $("summary").value.trim();
@@ -1892,6 +1910,15 @@ window.addEventListener("message", (ev) => {
       renderToolbar();
       updateCommitBtn();
       renderConflictButtons();
+      break;
+    case "commitMessage":
+      setGenerating(false);
+      if (msg.summary) {
+        $("summary").value = msg.summary;
+        if (msg.description) $("description").value = msg.description;
+        updateCommitBtn();
+        saveDraft(true);
+      }
       break;
     case "draft":
       // Only re-key the inputs when the repository in view actually changed, so

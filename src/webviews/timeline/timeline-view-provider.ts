@@ -14,6 +14,7 @@ import {
 import { NativeDiffViewer } from "../../core/git/native-diff";
 import { CommitDraftStore } from "../../core/services/commit-draft-store";
 import { ChangesBadge } from "./ports";
+import { CliCommitMessageGenerator } from "../../core/git/commit-message";
 import { TimelineController } from "./timeline-controller";
 import { WebviewHtmlService } from "./services/webview-html.service";
 
@@ -67,6 +68,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
       nativeDiff: new VsCodeNativeDiff(new NativeDiffViewer()),
       drafts: this.drafts,
       badge: this.badge,
+      generator: new CliCommitMessageGenerator(),
     });
 
     webviewView.webview.onDidReceiveMessage((message) =>
