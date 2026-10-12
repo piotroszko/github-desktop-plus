@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Branding: the icon keeps its artwork and gains a plus — a purple "+" badge in
+  the marketplace PNG (the corner it sits in was empty) and, for the
+  activity-bar mark, extra canvas so the plus sits clear of the Octocat
+- Rebranded as **GitHub Desktop Plus** (publisher `piotroszko`, extension id
+  `piotroszko.github-desktop-plus`): the manifest name/displayName, the activity
+  bar container, every command/view id (`githubDesktop.` → `githubDesktopPlus.`),
+  the command titles and the `githubDesktopPlus.autoRefreshInterval` setting key
+  moved to the new namespace, so this fork no longer clashes with the original
+  extension if both are installed. Stored state and secrets keep their
+  `githubDesktop.*` keys (they are namespaced per extension, and renaming them
+  would orphan existing repositories and tokens)
+
 ### Added
 - Commit box drafts persist per repository: the summary, description, co-authors
   and ticked files come back after the panel is recreated (view hidden, window
@@ -32,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failure (a failed fetch cannot leave a button spinning), and the spinner
   honours `prefers-reduced-motion`
 - Automatic refresh of the History panel's git state: every 30 s while the panel
-  is visible (setting `githubDesktop.autoRefreshInterval`, `0` disables it) and
+  is visible (setting `githubDesktopPlus.autoRefreshInterval`, `0` disables it) and
   immediately when the VS Code window regains focus, so changes made outside
   VS Code (git commands in a terminal, other tools) appear without re-opening
   the view

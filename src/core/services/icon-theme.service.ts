@@ -119,7 +119,7 @@ export class IconThemeService {
           path.dirname(theme.path),
         );
       } catch (error) {
-        console.warn("[GitHub Desktop] Failed to load icon theme", error);
+        console.warn("[GitHub Desktop Plus] Failed to load icon theme", error);
       }
       break;
     }
@@ -187,7 +187,7 @@ export class IconThemeService {
       return dataUri;
     } catch (error) {
       console.warn(
-        "[GitHub Desktop] Failed to load icon",
+        "[GitHub Desktop Plus] Failed to load icon",
         relativeIconPath,
         error,
       );

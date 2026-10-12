@@ -1,4 +1,4 @@
-# GitHub Desktop for VS Code — Overview
+# GitHub Desktop Plus — Overview
 
 A VS Code extension that brings a GitHub Desktop-style workflow into the editor:
 a Changes/History panel with a commit box, branch and sync controls, commit
@@ -12,11 +12,11 @@ sign-in.
 - creates `AccountManager` and `RepositoryManager` (state in `globalState`,
   tokens in `SecretStorage`);
 - registers the **Accounts** and **Repositories** tree views, and the
-  **History** webview view (`githubDesktop.timeline`);
+  **History** webview view (`githubDesktopPlus.timeline`);
 - registers the sign-in / account / clone / open / per-repository-account /
   issue / refresh commands;
 - arms `AutoRefresh` (`src/core/services/auto-refresh.ts`): it re-reads the
-  visible panel's git state every `githubDesktop.autoRefreshInterval` seconds
+  visible panel's git state every `githubDesktopPlus.autoRefreshInterval` seconds
   (default 30, `0` disables) and immediately on window focus, so state changed
   outside VS Code surfaces without reopening the view;
 - scans workspace folders for a `.git` dir and tracks the repositories it finds.
@@ -112,7 +112,7 @@ GitHub API calls (pull requests, commit avatars) go through
 
 Each tracked repository carries an optional `accountId`:
 
-- set explicitly with **GitHub Desktop: Select Account for Repository** (also on
+- set explicitly with **GitHub Desktop Plus: Select Account for Repository** (also on
   the Repositories tree item), with **Use Account for Current Repository** on an
   account in the Accounts tree, or from the account menu behind the History
   panel's avatar (next to the commit summary) — that account authenticates the

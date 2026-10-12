@@ -8,18 +8,18 @@ This guide explains how the extension enables multiple GitHub accounts and how t
 - **Device or OAuth flows:** Not implemented yet. The `@octokit/auth-oauth-device` dependency is available for future work but unused.
 
 ## Adding Accounts
-1. Run `GitHub Desktop: Sign In` from the command palette.
+1. Run `GitHub Desktop Plus: Sign In` from the command palette.
 2. If a GitHub CLI session is present, it is used automatically. Otherwise paste the PAT for the account you want to add.
 3. On success, the account appears in the **Accounts** tree view and becomes the active account.
 4. Repeat for additional accounts; each account keeps its own token in VS Code Secret Storage.
 
 ## Switching Accounts
-- Run `GitHub Desktop: Switch Active Account`.
+- Run `GitHub Desktop Plus: Switch Active Account`.
 - Choose the target account from the quick pick list.
 - The **Accounts** view updates to mark the active account, and subsequent commands (clone, issue creation) use its credentials.
 
 ## Removing Accounts
-- Run `GitHub Desktop: Sign Out` and select the account to remove.
+- Run `GitHub Desktop Plus: Sign Out` and select the account to remove.
 - The token is deleted from secret storage and the account disappears from the tree view.
 - If the active account is removed, the first remaining account becomes active automatically.
 

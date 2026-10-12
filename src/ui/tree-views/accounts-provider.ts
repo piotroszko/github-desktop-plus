@@ -10,12 +10,12 @@ class AccountItem extends vscode.TreeItem {
     super(account.login, vscode.TreeItemCollapsibleState.None);
     this.description = this.getDescription();
     this.contextValue = active
-      ? "githubDesktop.activeAccount"
-      : "githubDesktop.account";
+      ? "githubDesktopPlus.activeAccount"
+      : "githubDesktopPlus.account";
     this.iconPath = this.getIcon();
     this.tooltip = this.getTooltip();
     this.command = {
-      command: "githubDesktop.switchToAccount",
+      command: "githubDesktopPlus.switchToAccount",
       title: "Switch to this account",
       arguments: [account.id],
     };
@@ -96,14 +96,14 @@ class AddAccountItem extends vscode.TreeItem {
   constructor() {
     super("Add Account", vscode.TreeItemCollapsibleState.None);
     this.description = "Sign in to another GitHub account";
-    this.contextValue = "githubDesktop.addAccount";
+    this.contextValue = "githubDesktopPlus.addAccount";
     this.iconPath = new vscode.ThemeIcon(
       "add",
       new vscode.ThemeColor("charts.blue"),
     );
     this.tooltip = "Sign in to another GitHub account";
     this.command = {
-      command: "githubDesktop.addAccount",
+      command: "githubDesktopPlus.addAccount",
       title: "Add Account",
     };
   }
@@ -113,11 +113,11 @@ class ManageAccountsItem extends vscode.TreeItem {
   constructor() {
     super("Manage Accounts", vscode.TreeItemCollapsibleState.None);
     this.description = "Switch, refresh, or remove accounts";
-    this.contextValue = "githubDesktop.manageAccounts";
+    this.contextValue = "githubDesktopPlus.manageAccounts";
     this.iconPath = new vscode.ThemeIcon("settings-gear");
     this.tooltip = "Manage all GitHub accounts";
     this.command = {
-      command: "githubDesktop.manageAccounts",
+      command: "githubDesktopPlus.manageAccounts",
       title: "Manage Accounts",
     };
   }
@@ -162,7 +162,7 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
       );
       signInItem.description = "Get started with GitHub";
       signInItem.command = {
-        command: "githubDesktop.signIn",
+        command: "githubDesktopPlus.signIn",
         title: "Sign In",
       };
       signInItem.iconPath = new vscode.ThemeIcon("sign-in");

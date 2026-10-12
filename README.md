@@ -1,7 +1,7 @@
-# 🐙 GitHub Desktop for VS Code
+# 🐙 GitHub Desktop Plus
 
 <p align="center">
-  <img src="https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528789562_icon.png" alt="GitHub Desktop for VS Code" width="128" height="128">
+  <img src="media/icon.png" alt="GitHub Desktop Plus" width="128" height="128">
 </p>
 
 <p align="center">
@@ -103,12 +103,12 @@
 ## 🚀 Quick Start
 
 ### 1. **Install the Extension**
-- Search for "GitHub Desktop" in VS Code Extensions
+- Search for "GitHub Desktop Plus" in VS Code Extensions
 - Click **Install** and you're ready to go!
 
 ### 2. **Sign In to GitHub**
 1. Look for the 🐙 icon in VS Code's activity bar
-2. Click **"Add Account"** or use Command Palette: `GitHub Desktop: Sign In`
+2. Click **"Add Account"** or use Command Palette: `GitHub Desktop Plus: Sign In`
 3. Choose your preferred method:
    - **Browser Sign-in** (Recommended) - Uses VS Code's built-in GitHub authentication
    - **GitHub CLI** - If you have `gh` installed
@@ -150,18 +150,18 @@
 
 Access these commands via Command Palette (`Ctrl+Shift+P`):
 
-- `GitHub Desktop: Sign In` - Add a new GitHub account
-- `GitHub Desktop: Switch Active Account` - Switch between your accounts
-- `GitHub Desktop: Clone Repository` - Clone a repo with account selection
-- `GitHub Desktop: Open Repository` - Open any tracked repository
-- `GitHub Desktop: Select Account for Repository` - Choose which account a single repository authenticates as
-- `GitHub Desktop: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
-- `GitHub Desktop: Create Issue` - Create GitHub issues directly
-- `GitHub Desktop: Refresh Views` - Refresh all panels
+- `GitHub Desktop Plus: Sign In` - Add a new GitHub account
+- `GitHub Desktop Plus: Switch Active Account` - Switch between your accounts
+- `GitHub Desktop Plus: Clone Repository` - Clone a repo with account selection
+- `GitHub Desktop Plus: Open Repository` - Open any tracked repository
+- `GitHub Desktop Plus: Select Account for Repository` - Choose which account a single repository authenticates as
+- `GitHub Desktop Plus: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
+- `GitHub Desktop Plus: Create Issue` - Create GitHub issues directly
+- `GitHub Desktop Plus: Refresh Views` - Refresh all panels
 
 ### **⚙️ Settings**
 
-- `githubDesktop.autoRefreshInterval` (number, default `30`) - Seconds between automatic refreshes of the History panel while it is visible. Set to `0` to disable periodic refreshes; the panel still refreshes when it regains focus or a file is saved in VS Code.
+- `githubDesktopPlus.autoRefreshInterval` (number, default `30`) - Seconds between automatic refreshes of the History panel while it is visible. Set to `0` to disable periodic refreshes; the panel still refreshes when it regains focus or a file is saved in VS Code.
 
 ### **🎨 Keyboard & Mouse Shortcuts**
 - **Ctrl+Enter** - Commit staged changes
@@ -208,7 +208,7 @@ When creating a personal access token, ensure these scopes:
 
 **📂 Repository not showing?**
 - Make sure the folder contains a `.git` directory
-- Use `GitHub Desktop: Refresh Views` command
+- Use `GitHub Desktop Plus: Refresh Views` command
 - Check that you have access to the repository
 
 **🔄 Sync not working?**
@@ -217,7 +217,7 @@ When creating a personal access token, ensure these scopes:
 - For organization repos, ensure proper access rights
 
 ### **🐛 Found a Bug?**
-[Report issues on GitHub](https://github.com/betaversionio/github-desktop/issues) - we fix them fast!
+[Report issues on GitHub](https://github.com/piotroszko/github-desktop/issues) - we fix them fast!
 
 ---
 
@@ -227,8 +227,8 @@ We welcome contributions! Here's how you can help:
 
 ### **For Users**
 - ⭐ **Star the repository** if you find it useful
-- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/betaversionio/github-desktop/issues)
-- 💡 **Suggest features** via [GitHub Discussions](https://github.com/betaversionio/github-desktop/discussions)
+- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/piotroszko/github-desktop/issues)
+- 💡 **Suggest features** via [GitHub Discussions](https://github.com/piotroszko/github-desktop/discussions)
 - 📝 **Write reviews** and share your experience
 
 ### **For Developers**
@@ -237,7 +237,7 @@ We welcome contributions! Here's how you can help:
 - 🧪 **Add tests** for better reliability
 - 🎨 **Enhance UI/UX** to match GitHub Desktop even closer
 
-Visit our [GitHub repository](https://github.com/betaversionio/github-desktop) to get started!
+Visit our [GitHub repository](https://github.com/piotroszko/github-desktop) to get started!
 
 ---
 
@@ -282,16 +282,16 @@ We're constantly improving! Here's what's on our roadmap:
 </p>
 
 <p align="center">
-  🚀 <strong>Happy coding with GitHub Desktop for VS Code!</strong> 🚀
+  🚀 <strong>Happy coding with GitHub Desktop Plus!</strong> 🚀
 </p>
 
 <p align="center">
-  <a href="https://github.com/betaversionio/github-desktop">⭐ Star on GitHub</a> •
-  <a href="https://github.com/betaversionio/github-desktop/issues">🐛 Report Issues</a> •
-  <a href="https://github.com/betaversionio/github-desktop/discussions">💡 Discussions</a>
+  <a href="https://github.com/piotroszko/github-desktop">⭐ Star on GitHub</a> •
+  <a href="https://github.com/piotroszko/github-desktop/issues">🐛 Report Issues</a> •
+  <a href="https://github.com/piotroszko/github-desktop/discussions">💡 Discussions</a>
 </p>
 
 ---
 
-**License**: MIT © 2024 GitHub Desktop for VS Code Contributors
+**License**: MIT © 2025 Satyam Lohiya — GitHub Desktop Plus is a fork of `vscode-github-desktop`
 

@@ -53,7 +53,7 @@ export async function activate(
     isVisible: () => timelineProvider.isVisible(),
     intervalSeconds: () =>
       vscode.workspace
-        .getConfiguration("githubDesktop")
+        .getConfiguration("githubDesktopPlus")
         .get<number>("autoRefreshInterval", 30),
   });
   autoRefresh.start();
@@ -66,7 +66,7 @@ export async function activate(
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("githubDesktop.autoRefreshInterval")) {
+      if (event.affectsConfiguration("githubDesktopPlus.autoRefreshInterval")) {
         autoRefresh.start();
       }
     }),
@@ -75,51 +75,51 @@ export async function activate(
       new GitContentProvider(),
     ),
     vscode.window.registerTreeDataProvider(
-      "githubDesktop.accounts",
+      "githubDesktopPlus.accounts",
       accountsProvider,
     ),
     vscode.window.registerTreeDataProvider(
-      "githubDesktop.repositories",
+      "githubDesktopPlus.repositories",
       repositoriesProvider,
     ),
     vscode.window.registerWebviewViewProvider(
-      "githubDesktop.timeline",
+      "githubDesktopPlus.timeline",
       timelineProvider,
     ),
-    vscode.commands.registerCommand("githubDesktop.signIn", async () => {
+    vscode.commands.registerCommand("githubDesktopPlus.signIn", async () => {
       const account = await accountManager.signIn();
       if (account) {
         await linkUnassignedRepositories(repositoryManager, account.id);
         refreshAllViews();
       }
     }),
-    vscode.commands.registerCommand("githubDesktop.signOut", () =>
+    vscode.commands.registerCommand("githubDesktopPlus.signOut", () =>
       accountManager.signOut(),
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.signOutAccount",
+      "githubDesktopPlus.signOutAccount",
       (item: any) => {
         const accountId = item?.account?.id;
         return accountManager.signOut(accountId);
       },
     ),
-    vscode.commands.registerCommand("githubDesktop.switchAccount", () =>
+    vscode.commands.registerCommand("githubDesktopPlus.switchAccount", () =>
       accountManager.switchAccount(),
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.switchToAccount",
+      "githubDesktopPlus.switchToAccount",
       (accountId: string) => accountsProvider.switchToAccount(accountId),
     ),
-    vscode.commands.registerCommand("githubDesktop.cloneRepository", () =>
+    vscode.commands.registerCommand("githubDesktopPlus.cloneRepository", () =>
       cloneRepository(accountManager, repositoryManager, timelineProvider),
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.openRepository",
+      "githubDesktopPlus.openRepository",
       (repo?: TrackedRepository) =>
         openRepository(repositoryManager, timelineProvider, repo),
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.selectRepositoryAccount",
+      "githubDesktopPlus.selectRepositoryAccount",
       (repo?: TrackedRepository) =>
         selectRepositoryAccount(
           accountManager,
@@ -129,7 +129,7 @@ export async function activate(
         ),
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.useAccountForRepository",
+      "githubDesktopPlus.useAccountForRepository",
       (item?: { account?: StoredAccount }) =>
         useAccountForRepository(
           accountManager,
@@ -138,13 +138,13 @@ export async function activate(
           item?.account?.id,
         ),
     ),
-    vscode.commands.registerCommand("githubDesktop.createIssue", () =>
+    vscode.commands.registerCommand("githubDesktopPlus.createIssue", () =>
       createIssue(accountManager, repositoryManager),
     ),
-    vscode.commands.registerCommand("githubDesktop.refreshViews", () =>
+    vscode.commands.registerCommand("githubDesktopPlus.refreshViews", () =>
       refreshAllViews(),
     ),
-    vscode.commands.registerCommand("githubDesktop.addAccount", async () => {
+    vscode.commands.registerCommand("githubDesktopPlus.addAccount", async () => {
       const account = await accountManager.addAccount();
       if (account) {
         await linkUnassignedRepositories(repositoryManager, account.id);
@@ -152,7 +152,7 @@ export async function activate(
       }
     }),
     vscode.commands.registerCommand(
-      "githubDesktop.manageAccounts",
+      "githubDesktopPlus.manageAccounts",
       async () => {
         const accounts = accountManager.getAccounts();
         if (accounts.length === 0) {
@@ -204,7 +204,7 @@ export async function activate(
       },
     ),
     vscode.commands.registerCommand(
-      "githubDesktop.removeAccount",
+      "githubDesktopPlus.removeAccount",
       async (item: any) => {
         const accountId = item?.account?.id;
         if (accountId) {
@@ -216,7 +216,7 @@ export async function activate(
         }
       },
     ),
-    vscode.commands.registerCommand("githubDesktop.refreshAccounts", async () => {
+    vscode.commands.registerCommand("githubDesktopPlus.refreshAccounts", async () => {
       await accountManager.syncGitHubCliAccounts();
       accountsProvider.refresh();
     }),

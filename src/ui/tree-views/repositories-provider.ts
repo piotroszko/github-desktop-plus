@@ -18,9 +18,9 @@ class RepositoryItem extends vscode.TreeItem {
       repo.remoteUrl ? "repo" : "repo-forked",
     );
     this.resourceUri = vscode.Uri.file(repo.localPath);
-    this.contextValue = "githubDesktop.repository";
+    this.contextValue = "githubDesktopPlus.repository";
     this.command = {
-      command: "githubDesktop.openRepository",
+      command: "githubDesktopPlus.openRepository",
       title: "Open Repository",
       arguments: [repo],
     };
@@ -55,7 +55,7 @@ export class RepositoriesProvider
         vscode.TreeItemCollapsibleState.None,
       );
       item.command = {
-        command: "githubDesktop.cloneRepository",
+        command: "githubDesktopPlus.cloneRepository",
         title: "Clone Repository",
       };
       item.iconPath = new vscode.ThemeIcon("cloud-download");

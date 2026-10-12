@@ -90,7 +90,7 @@ export class WorkspaceRepositoryContext implements RepositoryContext {
   }
 
   async clone(): Promise<void> {
-    await vscode.commands.executeCommand("githubDesktop.cloneRepository");
+    await vscode.commands.executeCommand("githubDesktopPlus.cloneRepository");
   }
 }
 
