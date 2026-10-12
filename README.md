@@ -1,31 +1,30 @@
-# 🐙 GitHub Desktop Plus
+# GitHub Desktop Plus
 
 <p align="center">
   <img src="media/icon.png" alt="GitHub Desktop Plus" width="128" height="128">
 </p>
 
-<p align="center">
-  <strong>Bring GitHub Desktop's complete workflow experience directly into VS Code</strong>
-</p>
+GitHub Desktop's workflow inside VS Code: staged and unstaged changes side by
+side, a commit box, branch and sync controls, a visual history, conflict handling
+and multiple GitHub accounts.
 
-<p align="center">
-  Modern React UI • Multi-Account Support • Advanced Git Operations • Seamless GitHub Integration
-</p>
+## A fork of vscode-github-desktop
 
----
+This extension continues
+[`vscode-github-desktop`](https://github.com/betaversionio/github-desktop) by
+Satyam Lohiya, published on the Marketplace as *GitHub Desktop*, and is
+maintained here as **GitHub Desktop Plus**. It is a separate extension with its
+own id, so it installs alongside the original.
 
-## ✨ What You Get
+On top of the original it adds:
 
-🎨 **GitHub Desktop-style interface** right in your VS Code sidebar
-👥 **Multiple GitHub accounts** with one-click switching
-📝 **Visual commit history** with user avatars and detailed file changes
-🌿 **Advanced branch management** with activity tracking
-🔄 **Smart sync operations** with visual feedback
-⚡ **Native VS Code integration** using built-in diff viewer
+- per-repository GitHub accounts, including the identity commits are authored as
+- a per-repository comparison branch, independent of git's upstream
+- expanding a commit in History to the files it touched
+- drafting a commit message from the diff through a CLI
+- a rebrand (name, icon, command prefix) so both extensions can coexist
 
----
-
-## 📸 Examples
+## Screenshots
 
 ### Changes and the commit box
 ![Changes tab with staged and unstaged sections, the commit box, and a file diff](media/example/changes.png)
@@ -36,279 +35,141 @@
 ### Choosing the account a repository commits as
 ![Account menu showing the commit address of each account](media/example/accounts.png)
 
+## Features
 
----
+### Changes and commits
+- Staged and unstaged sections, one row per file per side, with per-file stage,
+  unstage and discard; a file that is staged and then edited again appears in both
+- Commit box with summary, description, co-authors, Amend and the number of files
+  it will commit. Anything staged is committed from the index; with nothing
+  staged, the ticked files are committed together
+- The message, description, co-authors and ticked files are kept per repository,
+  so a draft survives hiding the view, reloading the window or switching
+  repository
+- Generate a conventional-commit message from the diff with a command of your
+  choice, such as an agent CLI
+- Undo the last commit (leaving its changes staged), amend it, or force-push after
+  rewriting history
+- A merge, cherry-pick, revert or rebase stopped in conflict is shown in the
+  panel, where files can be marked resolved and the operation continued or aborted
+- The panel refreshes on save, on focus, and every 30 seconds while visible, so
+  changes made in a terminal appear without reopening the view
+- The activity-bar icon badges how many files have uncommitted changes
 
-## ✨ Features
+### History
+- Commit list with author avatars, relative times, tag badges and unpushed markers
+- Expand a commit to see the files it touched with per-file line counts, or open
+  all of them in VS Code's own changes editor
+- Right-click a commit to reset, check out, revert, cherry-pick, create a branch
+  or a tag, copy its SHA, or open it on GitHub
+- Diffs render in the panel's own pane, and fall back to VS Code's diff editor
+  when the panel is too narrow to show one
 
-### 🎨 **Modern React-Based Interface**
-- **GitHub Desktop-style UI** with clean, responsive design
-- **Material-UI components** styled with VS Code theming
-- **Avatar integration** with user profile pictures
-- **Dark/Light theme** support matching VS Code
-- **Responsive layout** that adapts to panel sizes
+### Branches, sync and pull requests
+- Branch menu grouped into default, recent and other, with last-commit activity
+- Create, switch and merge branches, and compare one branch against another
+- Per-repository base branch: compare against `develop` even when the branch
+  tracks `prod`. Sync state and pull-request links follow it, while push and pull
+  keep using git's own upstream
+- Fetch, pull, push, publish and force-push, with ahead/behind counters
+- Open pull requests for the branch are listed and can be checked out locally
+- Stash the working tree, or have it stashed when switching to another branch, and
+  apply or drop stashes from the list
 
-### 📝 **Advanced Commit Management**
-- **Interactive commit history** with detailed commit cards
-- **Commit detail panel** opening in separate webview with file changes
-- **Right-click context menu** on commits with full Git operations:
-  - Reset to commit
-  - Checkout commit
-  - Revert changes
-  - Create branch from commit
-  - Create tags
-  - Cherry-pick commits
-  - Copy SHA/commit info
-  - View on GitHub
-- **File diff viewer** integrated with VS Code's native diff editor
-- **Commit statistics** showing additions/deletions per file
+### Accounts
+- Several GitHub accounts at once, signed in through VS Code's browser flow, the
+  GitHub CLI (every account `gh` knows about is imported), a personal access
+  token, or GitHub Enterprise Server
+- Tokens are stored in VS Code's Secret Storage
+- Pin a repository to an account from the Repositories tree, the Accounts tree or
+  the avatar beside the commit summary. Unassigned repositories follow the active
+  account, and a pin whose account has been signed out falls back to it
+- The selected account is also the commit identity: commits, amends, cherry-picks,
+  reverts, merges, conflict continuations, pulls and annotated tags run with that
+  account's name and email — its public profile address, or GitHub's
+  `<id>+<login>@users.noreply.github.com` no-reply address — rather than the
+  machine's global git config. Nothing is written to `.git/config`
 
-### 🌿 **Branch Operations**
-- **Advanced branch dropdown** with grouping (Default/Recent/Other)
-- **Branch activity tracking** with last commit dates
-- **Branch creation** from any commit
-- **Branch merging** with merge dialog
-- **Branch switching** with visual feedback
+### Repositories
+- Repositories are detected from the workspace; others can be cloned or added by
+  path
+- Switching repository keeps the current VS Code window and is remembered for the
+  session
+- Create an issue, or open the repository, a commit or a pull request on GitHub
 
-### 👥 **Multi-Account Support**
-- **Multiple GitHub accounts** with visual indicators and easy switching
-- **Secure token storage** using VS Code Secret Storage API
-- **GitHub CLI integration** with automatic account detection
-- **One-click account switching** directly from accounts panel
-- **Per-repository base branch** — compare against `develop` (or any branch) even when the branch tracks `prod`; sync state, pull-request links and the branch menu follow it, while push/pull keep using git's own upstream
-- **Per-repository account selection** — pin a repo to a specific account (right-click it in the Repositories panel, right-click an account in the Accounts panel, or click the avatar next to the commit summary) while other repos keep using the active account
-- **Commit authorship follows that selection** — commits, amends, cherry-picks, reverts, merges, conflict continues and pulls are authored and committed as the repository's account (`name <email>`), not as the machine's global git identity; the account picker shows the address that will be used
-- **Account-specific operations** with proper isolation
-- **Smart CLI account selection** with guided switching process
+## Installation
 
-### 🔄 **Repository Management**
-- **Auto-detection** of workspace repositories with Git integration
-- **Repository cloning** with account selection and progress tracking
-- **Private repository** support with proper authentication
-- **Repository switching** within VS Code without window changes
-- **GitHub integration** for direct repository links and issue creation
+Install **GitHub Desktop Plus** from the VS Code Marketplace, or from a `.vsix`:
 
-### 📱 **Changes & History Panel**
-- **Generate commit message** - a small button beside the Summary field drafts the message from the staged diff (or all changes) through an agent CLI such as `omp`, with a `feat:`/`fix:`/… prefix and a 100-character cap
-- **Activity bar badge** - the icon shows how many files have uncommitted changes in the active repository, and clears when the tree is clean
-- **VS Code Source Control UI** - Exact replica of native source control
-- **Collapsible sections** for staged and unstaged changes
-- **File staging/unstaging** with individual file controls
-- **Commit message editing** with keyboard shortcuts (Ctrl+Enter)
-- **Expand a commit** in History to see the files it touched and jump straight to one file's changes (in the diff pane, or in VS Code's own diff editor in a narrow panel)
-- **Draft persistence** — the message, description, co-authors and ticked files are kept per repository, so they survive hiding the view, reloading the window, or switching to another repository
-- **Smart action buttons** (Stage All, Unstage All, Commit, Sync)
-- **Stage / unstage / discard on hover** — per file, plus per-section buttons for multi-file operations; commit takes the staged files from the index, and with nothing staged it commits the ticked files together
-- **Real-time updates** — refreshes on save, when the panel is shown or the window regains focus, and every 30 s while the panel is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up without re-opening the view
+```bash
+code --install-extension github-desktop-plus-<version>.vsix
+```
 
-### 🎛️ **Timeline Header**
-- **Dynamic sync status** showing Push/Pull/Fetch operations
-- **Interactive branch switching** with current branch display
-- **Sync counters** showing commits ahead/behind
-- **Contextual actions** (Force Push, Fetch Origin) when available
-- **GitHub Desktop-style layout** with proper spacing and icons
+## Getting started
 
-## 🚀 Quick Start
+1. Open the extension in the activity bar and choose *Sign In*, or run
+   `GitHub Desktop Plus: Sign In` from the Command Palette.
+2. Pick a sign-in method: VS Code's browser flow (recommended), the GitHub CLI, a
+   personal access token, or a GitHub Enterprise Server URL.
+3. Open any Git repository in your workspace — it is detected automatically. Use
+   the Repositories view, or `Clone Repository`, for anything else.
+4. Stage files, write a message and commit. Branch, sync and history controls sit
+   in the same panel.
 
-### 1. **Install the Extension**
-- Search for "GitHub Desktop Plus" in VS Code Extensions
-- Click **Install** and you're ready to go!
+If you sign in with a personal access token, it needs the `repo`, `read:org` and
+`user:email` scopes.
 
-### 2. **Sign In to GitHub**
-1. Look for the 🐙 icon in VS Code's activity bar
-2. Click **"Add Account"** or use Command Palette: `GitHub Desktop Plus: Sign In`
-3. Choose your preferred method:
-   - **Browser Sign-in** (Recommended) - Uses VS Code's built-in GitHub authentication
-   - **GitHub CLI** - If you have `gh` installed
-   - **Personal Access Token** - For manual setup
-   - **Enterprise Server** - For GitHub Enterprise users
+## Commands
 
-### 3. **Start Using**
-- Any Git repository in your workspace is automatically detected
-- Use the sidebar to view commit history, manage branches, and stage changes
-- Right-click commits for advanced Git operations
-- Switch between accounts instantly from the Accounts panel
+All commands are available from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 
-> **💡 Pro Tip**: The extension works seamlessly with VS Code's built-in Source Control - no configuration needed!
+| Command | Purpose |
+| --- | --- |
+| `GitHub Desktop Plus: Sign In` | Add a GitHub account |
+| `GitHub Desktop Plus: Sign Out` | Remove an account |
+| `GitHub Desktop Plus: Manage GitHub Accounts` | List, switch and remove accounts |
+| `GitHub Desktop Plus: Switch Active Account` | Change the account unassigned repositories use |
+| `GitHub Desktop Plus: Clone Repository` | Clone with an account and progress reporting |
+| `GitHub Desktop Plus: Open Repository` | Switch the tracked repository |
+| `GitHub Desktop Plus: Select Account for Repository` | Pin one repository to an account |
+| `GitHub Desktop Plus: Use Account for Current Repository` | Apply an account to the repository you are working on |
+| `GitHub Desktop Plus: Select Base Branch for Repository` | Choose the branch to compare against |
+| `GitHub Desktop Plus: Create Issue` | Open a new issue for the repository |
+| `GitHub Desktop Plus: Refresh Views` | Re-read the repositories and their state |
 
-## 💡 Key Features in Action
+The Accounts and Repositories views also offer these as context-menu entries.
 
-### **Multi-Account Support**
-- Add multiple GitHub accounts (personal, work, enterprise)
-- Switch between accounts with a single click
-- Pin an individual repository to one account (`Select Account for Repository`)
-  and leave the rest following the active account; unassigned or signed-out
-  selections fall back to the active account
-- The account you pick is also the identity commits are created with: the
-  extension passes that account's name and email to git for the commit you make
-  (using its public profile email, or GitHub's `<id>+<login>@users.noreply.github.com`
-  no-reply address when the email is private), so a personal repository keeps
-  committing as your personal account even when the machine's global git config
-  points somewhere else
-- Each account maintains its own repositories and settings
+## Settings
 
-### **Visual Git Operations**
-- **Native VS Code diffs**: in a narrow History panel (where the built-in diff pane is hidden) clicking a changed file or a commit opens VS Code's own diff/changes editor instead of rendering into an invisible pane
-- **Commit History**: Timeline view with user avatars and commit details
-- **File Changes**: Click any commit to see detailed file diffs
-- **Branch Management**: Visual branch dropdown with recent/active branches
-- **Right-click Context**: Access all Git operations via context menus
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `githubDesktopPlus.commitMessageCommand` | `omp` | Command behind the Generate button. It receives the diff on stdin and prints the message on stdout |
+| `githubDesktopPlus.commitMessageArgs` | `["-p", "--model", "commit"]` | Arguments passed to that command, before the built-in prompt |
+| `githubDesktopPlus.autoRefreshInterval` | `30` | Seconds between refreshes of the History panel while it is visible; `0` disables periodic refreshes |
 
-### **Seamless Workflow**
-- **Auto-detection**: Any Git repo in your workspace appears automatically
-- **Stage & Commit**: VS Code Source Control-style interface for staging files
-- **Sync Operations**: Push/pull with visual feedback and conflict detection
-- **GitHub Integration**: Direct links to view commits/repos on GitHub
+## Requirements
 
-## 🎛️ Available Commands
+- VS Code 1.84.0 or newer
+- Git installed and available on `PATH`
+- A GitHub account for the GitHub-specific features; local git operations work
+  without one
 
-Access these commands via Command Palette (`Ctrl+Shift+P`):
+## Security and privacy
 
-- `GitHub Desktop Plus: Sign In` - Add a new GitHub account
-- `GitHub Desktop Plus: Switch Active Account` - Switch between your accounts
-- `GitHub Desktop Plus: Clone Repository` - Clone a repo with account selection
-- `GitHub Desktop Plus: Open Repository` - Open any tracked repository
-- `GitHub Desktop Plus: Select Account for Repository` - Choose which account a single repository authenticates as
-- `GitHub Desktop Plus: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
-- `GitHub Desktop Plus: Select Base Branch for Repository` - Choose the branch the extension compares against (sync state, pull-request links) when it is not the tracked upstream
-- `GitHub Desktop Plus: Create Issue` - Create GitHub issues directly
-- `GitHub Desktop Plus: Refresh Views` - Refresh all panels
+- GitHub tokens are stored with VS Code's Secret Storage (the OS keychain), never
+  in `settings.json` or `.git/config`
+- Credentials for network operations are passed per git invocation as an ephemeral
+  `http.extraheader`; repository configuration is left untouched
+- Everything runs locally. The extension collects no telemetry and sends nothing
+  anywhere except the GitHub API calls its features require
+- Commands run through `execFile` with argument arrays rather than a shell
 
-### **⚙️ Settings**
+## Issues and contributions
 
-- `githubDesktopPlus.commitMessageCommand` (string, default `omp`) - command behind the Generate button; it gets the diff on stdin and must print the message on stdout.
-- `githubDesktopPlus.commitMessageArgs` (array, default `["-p", "--model", "commit"]`) - arguments passed to that command, before the built-in prompt.
-- `githubDesktopPlus.autoRefreshInterval` (number, default `30`) - Seconds between automatic refreshes of the History panel while it is visible. Set to `0` to disable periodic refreshes; the panel still refreshes when it regains focus or a file is saved in VS Code.
+Bug reports and pull requests are welcome in
+[the repository](https://github.com/piotroszko/github-desktop-plus/issues).
 
-### **🎨 Keyboard & Mouse Shortcuts**
-- **Ctrl+Enter** - Commit staged changes
-- **Click any account** - Switch to that account instantly
-- **Right-click commits** - Access Git operations menu
-- **Click commit** - View detailed file changes
-- **Click branch name** - Open branch selector
+## License
 
----
-
-## 🔒 Security & Privacy
-
-Your data is safe with us:
-- **Encrypted storage**: All GitHub tokens stored securely using VS Code's Secret Storage
-- **Local processing**: Everything runs locally on your machine
-- **No data collection**: We don't collect or transmit your personal data
-- **Account isolation**: Each GitHub account's data is completely separated
-- **Open source**: Full transparency - inspect the code yourself
-
----
-
-## ⚙️ Requirements
-
-- **VS Code**: Version 1.84.0 or higher
-- **Git**: Must be installed and accessible in PATH
-- **GitHub Account**: For full functionality (free accounts work perfectly)
-
-### **Personal Access Token Scopes** (if using manual token setup)
-When creating a personal access token, ensure these scopes:
-- `repo` - Repository access
-- `read:org` - Organization membership
-- `user:email` - User email access
-
----
-
-## 🆘 Need Help?
-
-### **Common Issues & Solutions**
-
-**🔐 Can't sign in?**
-- Try "Browser Sign-in" first (recommended method)
-- For tokens: Ensure scopes include `repo`, `read:org`, `user:email`
-- For GitHub CLI: Run `gh auth status` to verify authentication
-
-**📂 Repository not showing?**
-- Make sure the folder contains a `.git` directory
-- Use `GitHub Desktop Plus: Refresh Views` command
-- Check that you have access to the repository
-
-**🔄 Sync not working?**
-- Verify you have push permissions to the repository
-- Check your internet connection
-- For organization repos, ensure proper access rights
-
-### **🐛 Found a Bug?**
-[Report issues on GitHub](https://github.com/piotroszko/github-desktop-plus/issues) - we fix them fast!
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-### **For Users**
-- ⭐ **Star the repository** if you find it useful
-- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/piotroszko/github-desktop-plus/issues)
-- 💡 **Suggest features** via [GitHub Discussions](https://github.com/piotroszko/github-desktop-plus/discussions)
-- 📝 **Write reviews** and share your experience
-
-### **For Developers**
-- 🔧 **Fix bugs** or **add features** via pull requests
-- 📚 **Improve documentation**
-- 🧪 **Add tests** for better reliability
-- 🎨 **Enhance UI/UX** to match GitHub Desktop even closer
-
-Visit our [GitHub repository](https://github.com/piotroszko/github-desktop-plus) to get started!
-
----
-
-## 🎯 What's Coming Next
-
-We're constantly improving! Here's what's on our roadmap:
-
-### **🚀 Upcoming Features**
-- 📝 **Pull Request Management** - View, create, and review PRs directly in VS Code
-- 🔔 **GitHub Notifications** - Get notified about mentions, reviews, and issues
-- ✅ **Status Checks** - See CI/CD pipeline status right in the extension
-- 📦 **Stash Management** - Visual Git stash operations
-- 🤝 **Conflict Resolution** - Better merge conflict resolution tools
-- 📊 **Repository Insights** - Contribution graphs and repository statistics
-
-### **🎉 Recently Added**
-- ✅ Multi-account support with secure token storage
-- ✅ Right-click context menus for all Git operations
-- ✅ VS Code native diff integration
-- ✅ GitHub CLI integration with account detection
-- ✅ Branch activity tracking and smart grouping
-- ✅ Dynamic sync status and operations
-
----
-
-## 🌟 Why Choose This Extension?
-
-**vs. GitLens**: We provide a dedicated GitHub Desktop-style interface, while GitLens focuses on inline annotations and blame features.
-
-**vs. GitHub Pull Requests**: We offer complete Git workflow management with multi-account support, while GitHub PR extension focuses specifically on pull request operations.
-
-**vs. Built-in Source Control**: We enhance VS Code's native Git support with GitHub-specific features, visual commit history, and multi-account management.
-
-**Our Unique Value**: The only extension that brings the complete GitHub Desktop experience into VS Code with full multi-account support.
-
----
-
----
-
-<p align="center">
-  <strong>Made with ❤️ for the VS Code and GitHub communities</strong>
-</p>
-
-<p align="center">
-  🚀 <strong>Happy coding with GitHub Desktop Plus!</strong> 🚀
-</p>
-
-<p align="center">
-  <a href="https://github.com/piotroszko/github-desktop-plus">⭐ Star on GitHub</a> •
-  <a href="https://github.com/piotroszko/github-desktop-plus/issues">🐛 Report Issues</a> •
-  <a href="https://github.com/piotroszko/github-desktop-plus/discussions">💡 Discussions</a>
-</p>
-
----
-
-**License**: MIT © 2025 Satyam Lohiya — GitHub Desktop Plus is a fork of `vscode-github-desktop`
-
+MIT. Copyright (c) 2025 Satyam Lohiya, the author of the original
+`vscode-github-desktop`; see [LICENSE](LICENSE).

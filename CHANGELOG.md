@@ -1,18 +1,27 @@
 # Changelog
 
-All notable changes to the GitHub Desktop for VS Code extension will be documented in this file.
+All notable changes to GitHub Desktop Plus are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.0.1] - 2026-10-12
 
 ### Changed
-- The README's screenshots are now captures of this extension — Changes with the
-  commit box and a real diff, History with a commit expanded to the files it
-  touched, and the account menu showing the address each account commits as.
-  They live in `media/example/` instead of the upstream author's Firebase
-  bucket, and no longer show the upstream extension over their own project
+- README rewritten: shorter, factual prose without the marketing and roadmap
+  sections, the three screenshots kept as the visual introduction, and a note at
+  the top stating that this is a fork of `vscode-github-desktop` with a link to
+  the original repository. It no longer claims a "React / Material-UI" interface,
+  which the extension does not have
+- README screenshots replaced with current captures — Changes with the commit box
+  and a real diff, History with a commit expanded to the files it touched, and the
+  account menu showing the address each account commits as. They live in
+  `media/example/` instead of the upstream author's Firebase bucket and no longer
+  show the upstream extension over their own project; the second account carries a
+  placeholder address
+- This changelog now names the extension in its header and links to its own
+  releases, instead of introducing itself as the upstream extension and pointing
+  at the upstream project's releases
 
 ## [v2.0.0] - 2026-10-12
 
@@ -269,4 +278,4 @@ released without individual changelog entries._
 
 ---
 
-*For more details, see the [GitHub Releases](https://github.com/betaversionio/github-desktop/releases)*
+*For more details, see the [GitHub Releases](https://github.com/piotroszko/github-desktop-plus/releases)*
