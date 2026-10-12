@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   clears the pin. A signed-out selection falls back to the active account, and
   the Repositories tree shows the effective account per repo
 
+### Fixed
+- The account avatar next to the commit summary in the History panel now
+  follows account changes: switching accounts never refreshed the timeline, and
+  the avatar always showed the active account instead of the repository's
+  selected one
+
 ### Changed
 - Selecting another repository (repositories tree view, "Open Repository", or
   the timeline's repository picker) no longer switches the VS Code window: the

@@ -1,4 +1,5 @@
 import { AccountManager } from "../../core/accounts/account-manager";
+import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
 import { GitClientFactory } from "../../core/git/git-authenticator";
 import { InboundMessage } from "./messages";
 import { RemoteStatus } from "./interfaces/repository-snapshot";
@@ -192,14 +193,17 @@ export class TimelineController implements Refresher {
       activePath: snapshot.repository.path,
     });
 
-    const active = accounts.getActiveAccount();
+    const repo = this.deps.repos.getPrimary();
+    const account = repo
+      ? resolveRepositoryAccount(accounts, repo)
+      : accounts.getActiveAccount();
     channel.post({
       command: "updateAccounts",
-      activeAccount: active
+      account: account
         ? {
-            login: active.login,
-            name: active.name,
-            avatarUrl: active.avatarUrl,
+            login: account.login,
+            name: account.name,
+            avatarUrl: account.avatarUrl,
           }
         : null,
     });

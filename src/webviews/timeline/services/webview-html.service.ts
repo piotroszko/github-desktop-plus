@@ -1578,7 +1578,7 @@ window.addEventListener("message", (ev) => {
       state.activeRepoPath = msg.activePath || null;
       break;
     case "updateAccounts":
-      state.account = msg.activeAccount || null;
+      state.account = msg.account || null;
       setAvatar();
       break;
     case "updateRemoteStatus":

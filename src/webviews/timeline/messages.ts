@@ -100,7 +100,12 @@ export type OutboundMessage =
     }
   | {
       command: "updateAccounts";
-      activeAccount: {
+      /**
+       * The account the timeline acts as: the active repository's selected
+       * account when it has one, otherwise the extension-wide active account.
+       * `null` when no account is available.
+       */
+      account: {
         login: string;
         name?: string;
         avatarUrl?: string;

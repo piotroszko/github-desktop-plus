@@ -179,6 +179,9 @@ export async function activate(
       await accountManager.syncGitHubCliAccounts();
       accountsProvider.refresh();
     }),
+    accountManager.onDidChangeAccounts(() => {
+      void timelineProvider.refresh();
+    }),
     vscode.workspace.onDidSaveTextDocument(() => {
       void timelineProvider.refresh();
     }),
