@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The Changes tab now shows **Staged Changes** and **Changes** as separate
+  sections, like VS Code's own source control: each is collapsible, carries a
+  count, and has its own actions (stage all / unstage all / discard all). Every
+  file row gains hover buttons — stage or unstage, plus discard. A file that is
+  staged *and* edited again appears in both sections
+- Commit precedence follows staging: with something staged, Commit runs on the
+  index (`commit`) and only those files are committed; with nothing staged, the
+  ticked files are staged and committed together as before. The commit button
+  says which applies, and Amend follows the same rule
+- Repositories with no commit yet no longer break the panel (`git log` has
+  nothing to read there), and staging/unstaging works in them (`reset` has no
+  HEAD, so unstage falls back to `rm --cached`)
 - Loading states for the buttons that start long operations: the sync cell
   (Fetch / Pull / Push / Publish / Force-push) switches to a spinner with a
   progress label and ignores clicks until the operation settles, the Commit

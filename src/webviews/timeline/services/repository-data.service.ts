@@ -1,4 +1,5 @@
 import * as path from "path";
+import { StatusResult } from "simple-git";
 import { GitClientFactory } from "../../../core/git/git-authenticator";
 import { RepositoryContext } from "../ports";
 import {
@@ -34,6 +35,42 @@ export class RepositoryDataService {
   ) {}
 
   /**
+   * @description Splits the working tree into the two sections the UI shows:
+   * one entry per file *per side* that changed, so a partially staged file
+   * (status `MM`) appears under both Staged and Changes, like VS Code's own
+   * source control. Conflicted paths appear once, unstaged, because index and
+   * working tree describe the same conflict.
+   */
+  private toChangeEntries(status: StatusResult): ChangeEntry[] {
+    const conflicted = new Set(status.conflicted);
+    const entries: ChangeEntry[] = [];
+    for (const file of status.files) {
+      const index = (file.index ?? " ").trim();
+      const working = (file.working_dir ?? " ").trim();
+      if (conflicted.has(file.path)) {
+        entries.push({
+          path: file.path,
+          status: working || index || "U",
+          staged: false,
+        });
+        continue;
+      }
+      // Untracked files have no other side.
+      if (index === "?" || working === "?") {
+        entries.push({ path: file.path, status: "??", staged: false });
+        continue;
+      }
+      if (index) {
+        entries.push({ path: file.path, status: index, staged: true });
+      }
+      if (working) {
+        entries.push({ path: file.path, status: working, staged: false });
+      }
+    }
+    return entries;
+  }
+
+  /**
    * Builds a full snapshot for the current repository.
    *
    * @returns The snapshot, or `null` when no repository is open
@@ -47,7 +84,10 @@ export class RepositoryDataService {
     const git = this.git.plain(repo.localPath);
     const [status, log, branch, remotes] = await Promise.all([
       git.status(),
-      git.log({ maxCount: COMMITS_PAGE_SIZE }),
+      // A repository with no commit yet has no log to read.
+      git
+        .log({ maxCount: COMMITS_PAGE_SIZE })
+        .catch(() => ({ all: [], total: 0 })),
       git.branch(),
       git.getRemotes(true),
     ]);
@@ -59,11 +99,7 @@ export class RepositoryDataService {
       remotes,
     );
 
-    const changes: ChangeEntry[] = status.files.map((file) => ({
-      path: file.path,
-      status: `${file.index ?? ""}${file.working_dir ?? ""}`.trim() || "--",
-      staged: file.index !== " " && file.index !== "?",
-    }));
+    const changes = this.toChangeEntries(status);
 
     const commits: CommitEntry[] = log.all.map((commit, index) =>
       this.toCommitEntry(commit, index, remoteStatus),

@@ -178,6 +178,9 @@ const ICON = {
   publish: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 1 4 5h2.5v5h3V5H12ZM3 12.5h10V14H3Z"/></svg>`,
   spinner: `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6" opacity=".3"/><path d="M14 8a6 6 0 0 0-6-6"/></svg>`,
   caret: `<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4 6l4 4 4-4Z"/></svg>`,
+  plus: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>`,
+  minus: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3.5 8h9"/></svg>`,
+  discard: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3.5v4h4"/><path d="M3.4 7.4A5.2 5.2 0 1 1 5 12.6"/></svg>`,
   check: `<svg viewBox="0 0 16 16" width="28" height="28" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>`,
   file: `<svg viewBox="0 0 16 16" width="28" height="28" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25Zm7.5-.25v2.75c0 .414.336.75.75.75h2.75Z"/></svg>`,
   people: `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor"><path d="M5.5 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 5c2 0 3.5 1 3.5 2.75V12H2v-.75C2 9.5 3.5 8.5 5.5 8.5Zm5.5-4a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Zm.25 4.5c1.66 0 2.75.9 2.75 2.4V12h-3.2c.06-.28.2-.85.2-1.25 0-.7-.2-1.3-.55-1.8.27-.06.55-.1.85-.1Z"/></svg>`,
@@ -337,12 +340,37 @@ body.narrow #right { display: none; }
 .st-D { background: var(--vscode-gitDecoration-deletedResourceForeground, #d73a49); }
 .st-R { background: var(--vscode-gitDecoration-renamedResourceForeground, #8250df); }
 .st-C { background: var(--vscode-gitDecoration-conflictingResourceForeground, #e4676b); }
-.file-x {
-  flex: 0 0 auto; opacity: 0; width: 18px; height: 18px; border: 0; border-radius: 4px;
-  background: transparent; cursor: pointer; color: inherit; font-size: 14px; line-height: 1;
+/* ---- staged / unstaged sections ---- */
+.group { display: flex; flex-direction: column; }
+.group + .group { border-top: 1px solid var(--gd-border); }
+.group-head {
+  display: flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 8px 0 6px; background: var(--gd-chrome);
 }
-.file-row:hover .file-x { opacity: .6; }
-.file-x:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,.2)); }
+.group-head:hover { background: var(--vscode-list-hoverBackground); }
+.group-toggle {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border: 0; background: transparent; cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+}
+.group-toggle svg { transition: transform .12s ease-out; }
+.group.is-collapsed .group-toggle svg { transform: rotate(-90deg); }
+.group.is-collapsed .group-rows { display: none; }
+.group-title {
+  flex: 1 1 auto; font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  text-transform: uppercase; color: var(--vscode-descriptionForeground);
+}
+.group-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; opacity: 0; }
+.group-head:hover .group-actions, .group-head:focus-within .group-actions { opacity: 1; }
+.row-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; opacity: 0; }
+.file-row:hover .row-actions, .file-row:focus-within .row-actions { opacity: 1; }
+.row-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border: 0; border-radius: 4px; cursor: pointer;
+  background: transparent; color: var(--vscode-foreground); opacity: .7;
+}
+.row-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,.2)); }
+@media (prefers-reduced-motion: reduce) { .group-toggle svg { transition: none; } }
 
 /* ---- commit box (pinned to the bottom of the panel) ---- */
 #commitBox {
@@ -616,6 +644,7 @@ const state = {
   accounts: [],
   accountPinned: false,
   busy: null,
+  collapsed: {},
   changes: [],
   history: [],
   branches: [],
@@ -766,11 +795,70 @@ function visibleChanges() {
   const f = state.filter.trim().toLowerCase();
   return state.changes.filter((c) => !f || c.path.toLowerCase().indexOf(f) >= 0);
 }
+const ACTIONS = { plus: ${JSON.stringify(ICON.plus)}, minus: ${JSON.stringify(ICON.minus)}, discard: ${JSON.stringify(ICON.discard)}, caret: ${JSON.stringify(ICON.caret)} };
+function uniquePaths(entries) {
+  const paths = new Set();
+  for (const c of entries) paths.add(c.path);
+  return Array.from(paths);
+}
+function stagedPaths() { return uniquePaths(state.changes.filter((c) => c.staged)); }
+function changeRow(c, section) {
+  const parts = fileParts(c.path);
+  const isConflict = state.conflicted.indexOf(c.path) >= 0;
+  const L = isConflict ? "C" : statusLetter(c.status);
+  const row = document.createElement("div");
+  row.className = "file-row" + (state.selectedPath === c.path ? " is-selected" : "") + (isConflict ? " is-conflict" : "");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = state.selectedFiles.has(c.path);
+  cb.disabled = isConflict;
+  cb.onclick = (e) => {
+    e.stopPropagation();
+    if (isConflict) return;
+    if (cb.checked) state.selectedFiles.add(c.path); else state.selectedFiles.delete(c.path);
+    renderChanges();
+  };
+  const sq = document.createElement("span");
+  sq.className = "status-sq st-" + L;
+  sq.textContent = L;
+  const name = document.createElement("span");
+  name.className = "file-name";
+  name.innerHTML = '<span class="file-dir">' + esc(parts.dir) + '</span>' + esc(parts.name);
+  const actions = document.createElement("span");
+  actions.className = "row-actions";
+  const action = (icon, title, run) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "row-btn"; b.title = title; b.innerHTML = icon;
+    b.onclick = (e) => { e.stopPropagation(); run(); };
+    return b;
+  };
+  if (isConflict) {
+    const resolve = document.createElement("button");
+    resolve.type = "button"; resolve.className = "file-resolve"; resolve.textContent = "Mark resolved";
+    resolve.onclick = (e) => { e.stopPropagation(); post("markResolved", { files: [c.path] }); };
+    actions.appendChild(resolve);
+  } else if (section === "staged") {
+    actions.appendChild(action(ACTIONS.minus, "Unstage", () => post("unstageFiles", { files: [c.path] })));
+    actions.appendChild(action(ACTIONS.discard, "Discard changes", () => post("discardFiles", { files: [c.path] })));
+  } else {
+    actions.appendChild(action(ACTIONS.plus, "Stage", () => post("stageFiles", { files: [c.path] })));
+    actions.appendChild(action(ACTIONS.discard, "Discard changes", () => post("discardFiles", { files: [c.path] })));
+  }
+  row.appendChild(cb); row.appendChild(sq); row.appendChild(name); row.appendChild(actions);
+  row.onclick = () => selectFile(c.path);
+  return row;
+}
 function renderChanges() {
   const list = $("fileList");
   const vis = visibleChanges();
+  const visPaths = uniquePaths(vis);
+  const allPaths = uniquePaths(state.changes);
+  const staged = vis.filter((c) => c.staged);
+  const unstaged = vis.filter((c) => !c.staged);
+  const stagedList = uniquePaths(staged);
+  const unstagedList = uniquePaths(unstaged);
   const has = state.changes.length > 0;
-  $("changesBadge").textContent = state.changes.length;
+  $("changesBadge").textContent = String(allPaths.length);
   $("noChanges").hidden = has;
   $("fileList").hidden = !has;
   // The commit box stays visible even with a clean tree so "Amend last commit"
@@ -780,38 +868,60 @@ function renderChanges() {
   $("filterWrap").hidden = !has;
 
   const n = state.selectedFiles.size;
-  $("allText").textContent = n + " of " + state.changes.length + " file" + (state.changes.length === 1 ? "" : "s") + " to commit";
-  $("allCheck").checked = state.changes.length > 0 && n === state.changes.length;
-  $("allCheck").indeterminate = n > 0 && n < state.changes.length;
+  $("allText").textContent = n + " of " + allPaths.length + " file" + (allPaths.length === 1 ? "" : "s") + " selected" +
+    (stagedList.length > 0 ? " · staged files commit first" : "");
+  $("allCheck").checked = visPaths.length > 0 && visPaths.every((p) => state.selectedFiles.has(p));
+  $("allCheck").indeterminate = n > 0 && !$("allCheck").checked;
 
   list.innerHTML = "";
-  for (const c of vis) {
-    const parts = fileParts(c.path);
-    const L = statusLetter(c.status);
-    const isConflict = state.conflicted.indexOf(c.path) >= 0;
-    const row = document.createElement("div");
-    row.className = "file-row" + (state.selectedPath === c.path ? " is-selected" : "") + (isConflict ? " is-conflict" : "");
-    row.innerHTML =
-      '<input type="checkbox" ' + (state.selectedFiles.has(c.path) ? "checked" : "") + (isConflict ? " disabled" : "") + '>' +
-      '<span class="status-sq st-' + (isConflict ? "C" : L) + '">' + (isConflict ? "C" : L) + '</span>' +
-      '<span class="file-name"><span class="file-dir">' + esc(parts.dir) + '</span>' + esc(parts.name) + '</span>' +
-      (isConflict
-        ? '<button class="file-resolve" type="button">Mark resolved</button>'
-        : '<button class="file-x" title="Discard changes" type="button">×</button>');
-    const cb = row.querySelector("input");
-    cb.onclick = (e) => {
-      e.stopPropagation();
-      if (isConflict) return;
-      if (cb.checked) state.selectedFiles.add(c.path); else state.selectedFiles.delete(c.path);
-      renderChanges();
-    };
-    if (isConflict) {
-      row.querySelector(".file-resolve").onclick = (e) => { e.stopPropagation(); post("markResolved", { files: [c.path] }); };
-    } else {
-      row.querySelector(".file-x").onclick = (e) => { e.stopPropagation(); post("discardFiles", { files: [c.path] }); };
+  // Two sections, staged first, like VS Code's own source control. A file that
+  // is staged *and* edited again appears in both (one row per side).
+  const section = (key, title, rows, actions) => {
+    const group = document.createElement("div");
+    group.className = "group" + (state.collapsed[key] ? " is-collapsed" : "");
+    const head = document.createElement("div");
+    head.className = "group-head";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "group-toggle";
+    toggle.title = (state.collapsed[key] ? "Expand " : "Collapse ") + title;
+    toggle.setAttribute("aria-expanded", String(!state.collapsed[key]));
+    toggle.innerHTML = ACTIONS.caret;
+    toggle.onclick = () => { state.collapsed[key] = !state.collapsed[key]; renderChanges(); };
+    const name = document.createElement("span");
+    name.className = "group-title";
+    name.textContent = title;
+    const count = document.createElement("span");
+    count.className = "badge";
+    count.textContent = String(uniquePaths(rows).length);
+    const tools = document.createElement("span");
+    tools.className = "group-actions";
+    for (const item of actions) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "row-btn"; b.title = item.title; b.innerHTML = item.icon;
+      b.onclick = (e) => { e.stopPropagation(); item.run(); };
+      tools.appendChild(b);
     }
-    row.onclick = () => selectFile(c.path);
-    list.appendChild(row);
+    head.appendChild(toggle); head.appendChild(name); head.appendChild(count); head.appendChild(tools);
+    const body = document.createElement("div");
+    body.className = "group-rows";
+    for (const c of rows) body.appendChild(changeRow(c, key));
+    group.appendChild(head);
+    group.appendChild(body);
+    list.appendChild(group);
+  };
+
+  if (staged.length > 0) {
+    section("staged", "Staged Changes", staged, [
+      { title: "Unstage all", icon: ACTIONS.minus, run: () => post("unstageFiles", { files: stagedList }) },
+      { title: "Discard all staged changes", icon: ACTIONS.discard, run: () => post("discardFiles", { files: stagedList }) },
+    ]);
+  }
+  if (unstaged.length > 0) {
+    section("changes", "Changes", unstaged, [
+      { title: "Stage all changes", icon: ACTIONS.plus, run: () => post("stageFiles", { files: unstagedList }) },
+      { title: "Discard all changes", icon: ACTIONS.discard, run: () => post("discardFiles", { files: unstagedList }) },
+    ]);
   }
   updateCommitBtn();
 }
@@ -908,7 +1018,12 @@ function coAuthorTrailers() {
   });
   return lines.length ? "\n\n" + lines.join("\n") : "";
 }
+function countLabel(count, word) {
+  return count + " " + word + (count === 1 ? "" : "s");
+}
 function updateCommitBtn() {
+  // Staged files win; with nothing staged the ticked files are committed.
+  const stagedCount = stagedPaths().length;
   const n = state.selectedFiles.size;
   const hasMsg = $("summary").value.trim().length > 0;
   const btn = $("commitBtn");
@@ -917,12 +1032,14 @@ function updateCommitBtn() {
     btn.textContent = "Committing…";
     return;
   }
-  const ok = hasMsg && (state.amend || n > 0);
+  const ok = hasMsg && (state.amend || stagedCount > 0 || n > 0);
   btn.disabled = !ok;
+  const count = stagedCount > 0 ? stagedCount : n;
+  const what = count > 0 ? countLabel(count, "file") : "";
   if (state.amend) {
-    btn.innerHTML = "Amend last commit" + (n > 0 ? " (+" + n + " file" + (n === 1 ? "" : "s") + ")" : "");
+    btn.innerHTML = "Amend last commit" + (what ? " (+" + what + ")" : "");
   } else {
-    btn.innerHTML = "Commit " + (n > 0 ? n + " file" + (n === 1 ? "" : "s") + " " : "") +
+    btn.innerHTML = "Commit " + (what ? what + " " : "") +
       "to <strong>" + esc(state.currentBranch || "branch") + "</strong>";
   }
 }
@@ -930,11 +1047,19 @@ $("summary").oninput = updateCommitBtn;
 function doCommit() {
   const summary = $("summary").value.trim();
   const n = state.selectedFiles.size;
-  if (!summary || (!state.amend && n === 0)) return;
+  if (!summary || (!state.amend && stagedPaths().length === 0 && n === 0)) return;
   const desc = $("description").value.trim();
   const message = summary + (desc ? "\n\n" + desc : "") + coAuthorTrailers();
-  const files = Array.from(state.selectedFiles);
-  post(state.amend ? "amendCommit" : "commitFiles", { message: message, files: files });
+  const staged = stagedPaths();
+  // Staged files take precedence: they commit from the index. With nothing
+  // staged, the ticked files are staged and committed together.
+  if (state.amend) {
+    post("amendCommit", { message: message, files: staged.length > 0 ? [] : Array.from(state.selectedFiles) });
+  } else if (staged.length > 0) {
+    post("commit", { message: message });
+  } else {
+    post("commitFiles", { message: message, files: Array.from(state.selectedFiles) });
+  }
   $("commitBtn").disabled = true;
   // Inputs cleared only on the "commitSucceeded" ack.
 }

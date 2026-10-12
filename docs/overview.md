@@ -85,8 +85,20 @@ triggers a single recompute. Refreshes are triggered by saving a file, showing
 the panel, regaining window focus, an account change, and `AutoRefresh`'s
 interval while the panel is visible.
 
-## Authentication
+### Commit model
 
+The Changes tab renders two sections, **Staged Changes** then **Changes**, from
+one entry per file *per side* that changed
+(`RepositoryDataService.toChangeEntries`), so a partially staged file appears in
+both; a conflicted path appears once, unstaged. Row and section buttons post
+`stageFiles` / `unstageFiles` / `discardFiles`, handled by `WorkingTreeService`.
+
+Commit precedence: with something staged, `commit` commits the index and only
+those files are committed; with nothing staged, the ticked files are staged and
+committed together (`commitFiles`). `amendCommit` follows the same rule — it
+adds no extra paths when the index already holds changes.
+
+## Authentication
 `AccountManager` tries `gh auth token`, then VS Code's built-in GitHub auth,
 then a manually entered PAT. Tokens live only in `SecretStorage`. Git network
 operations get the token via `GitClientFactory.withAuth`, and the timeline's

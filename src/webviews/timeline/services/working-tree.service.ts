@@ -28,7 +28,14 @@ export class WorkingTreeService extends RepositoryScopedService {
   }
 
   unstage(files: string[]): Promise<void | undefined> {
-    return this.mutate(files, (g) => g.reset(["HEAD", "--", ...files]));
+    return this.mutate(files, async (g) => {
+      try {
+        await g.reset(["HEAD", "--", ...files]);
+      } catch {
+        // A repository with no commit yet has no HEAD to reset against.
+        await g.raw(["rm", "-r", "--cached", "--", ...files]);
+      }
+    });
   }
 
   /** Commits exactly `files` (stages them first, then commits with a pathspec). */
