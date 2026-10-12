@@ -673,8 +673,8 @@ const state = {
   repositories: [],
   activeRepoPath: null,
   draftPath: null,
-  draftedSelection: null,
-  selectionInitialized: false,
+  unselected: new Set(),
+  legacySelected: null,
   account: null,
   accounts: [],
   accountPinned: false,
@@ -842,9 +842,11 @@ const ACTIONS = { plus: ${JSON.stringify(ICON.plus)}, minus: ${JSON.stringify(IC
 function applyDraft(draft, path) {
   const d = draft || {};
   state.draftPath = path || null;
-  state.draftedSelection = Array.isArray(d.selected) ? d.selected : null;
-  state.selectedFiles = new Set(state.draftedSelection || []);
-  state.selectionInitialized = false;
+  state.unselected = new Set(Array.isArray(d.unselected) ? d.unselected : []);
+  // Drafts written before this field existed stored the ticked set instead; turn
+  // it into exceptions once the change list arrives.
+  state.legacySelected = !Array.isArray(d.unselected) && Array.isArray(d.selected) ? d.selected : null;
+  state.selectedFiles = new Set();
   $("summary").value = d.summary || "";
   $("description").value = d.description || "";
   state.coAuthors = d.coAuthors || "";
@@ -853,12 +855,18 @@ function applyDraft(draft, path) {
   $("coAuthToggle").classList.toggle("is-on", !!state.coAuthors);
   updateCommitBtn();
 }
+/* Ticked files are "everything, minus what the user unticked", recomputed from
+   the current change list — so a file that appears later is ticked by default. */
+function syncSelection() {
+  const paths = uniquePaths(state.changes);
+  state.selectedFiles = new Set(paths.filter((p) => !state.unselected.has(p)));
+}
 function currentDraft() {
   return {
     summary: $("summary").value,
     description: $("description").value,
     coAuthors: state.coAuthors || "",
-    selected: Array.from(state.selectedFiles),
+    unselected: Array.from(state.unselected),
   };
 }
 let draftTimer = null;
@@ -891,12 +899,13 @@ function changeRow(c, section) {
   row.className = "file-row" + (state.selectedPath === c.path ? " is-selected" : "") + (isConflict ? " is-conflict" : "");
   const cb = document.createElement("input");
   cb.type = "checkbox";
-  cb.checked = state.selectedFiles.has(c.path);
+  cb.checked = !state.unselected.has(c.path);
   cb.disabled = isConflict;
   cb.onclick = (e) => {
     e.stopPropagation();
     if (isConflict) return;
-    if (cb.checked) state.selectedFiles.add(c.path); else state.selectedFiles.delete(c.path);
+    if (cb.checked) state.unselected.delete(c.path); else state.unselected.add(c.path);
+    syncSelection();
     renderChanges();
     saveDraft();
   };
@@ -1081,8 +1090,9 @@ function selectFile(p) {
   post("getWorkingDiff", { filePath: p });
 }
 $("allCheck").onclick = () => {
-  if ($("allCheck").checked) state.changes.forEach((c) => state.selectedFiles.add(c.path));
-  else state.selectedFiles.clear();
+  if ($("allCheck").checked) state.unselected.clear();
+  else state.unselected = new Set(uniquePaths(state.changes));
+  syncSelection();
   renderChanges();
   saveDraft();
 };
@@ -1890,27 +1900,17 @@ window.addEventListener("message", (ev) => {
   const msg = ev.data || {};
   switch (msg.command || msg.type) {
     case "updateChanges": {
-      const prevPaths = new Set(state.changes.map((c) => c.path));
       state.changes = msg.changes || [];
       const paths = new Set(state.changes.map((c) => c.path));
-      // Auto-check newly appeared files (GitHub Desktop checks everything by default),
-      // keep the user's choices for files that were already listed.
-      state.selectedFiles = new Set(
-        Array.from(state.selectedFiles).filter((p) => paths.has(p)),
-      );
-      if (!state.selectionInitialized) {
-        // First snapshot after (re)load: a restored draft's ticks win; without
-        // one, everything is ticked like before.
-        state.selectionInitialized = true;
-        const drafted = state.draftedSelection;
-        state.changes.forEach((c) => {
-          if (!drafted || drafted.indexOf(c.path) >= 0) state.selectedFiles.add(c.path);
-        });
-      } else {
-        state.changes.forEach((c) => {
-          if (!prevPaths.has(c.path)) state.selectedFiles.add(c.path);
-        });
+      if (state.legacySelected) {
+        // One-off migration of a draft that stored the ticked set.
+        const legacy = state.legacySelected;
+        state.legacySelected = null;
+        state.unselected = new Set(
+          Array.from(paths).filter((p) => legacy.indexOf(p) < 0),
+        );
       }
+      syncSelection();
       if (state.selectedPath && !paths.has(state.selectedPath)) {
         state.selectedPath = null;
         $("diffHeader").hidden = true;
@@ -1951,8 +1951,9 @@ window.addEventListener("message", (ev) => {
       $("summary").value = ""; $("description").value = ""; $("coAuthors").value = "";
       state.coAuthors = "";
       state.selectedFiles.clear();
+      state.unselected.clear();
+      state.legacySelected = null;
       state.amend = false; $("amendCheck").checked = false;
-      state.draftedSelection = [];
       updateCommitBtn();
       saveDraft(true);
       break;

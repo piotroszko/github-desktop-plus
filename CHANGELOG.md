@@ -102,6 +102,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   All three surfaces write the same per-repository default
 
 ### Fixed
+- Ticked files now follow an *exception* list: everything is ticked by default,
+  including files that appear after a draft was saved, and only the files you
+  untick stay unticked (a plain toggle or "select all off" records them). A
+  restored draft used to treat its saved tick list as the whole truth, so a file
+  created since then came back unticked. Drafts written before this change are
+  migrated the first time they are applied
 - The repository / branch / sync dropdowns and the commit context menus no
   longer get cut off at the edge of the view: menus are now sized and placed
   against the actual space in the panel (opening upward when there is more room

@@ -34,8 +34,12 @@ export interface CommitDraft {
   summary?: string;
   description?: string;
   coAuthors?: string;
-  /** Ticked file paths. An empty array means "nothing ticked", which is not the
-   * same as an absent draft (that defaults to everything ticked). */
+  /**
+   * Paths the user unticked on purpose. Everything else is ticked by default,
+   * including files that did not exist when the draft was written.
+   */
+  unselected?: string[];
+  /** @deprecated Drafts used to store the ticked set; read only to migrate them. */
   selected?: string[];
 }
 
