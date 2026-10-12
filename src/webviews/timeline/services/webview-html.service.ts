@@ -441,6 +441,25 @@ body.narrow #right { display: none; }
   width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto;
   object-fit: cover; background: var(--vscode-badge-background);
 }
+/* ---- expanded commit: the files it touched ---- */
+.commit-row.is-expanded { background: var(--vscode-list-inactiveSelectionBackground); }
+.commit-caret { flex: 0 0 auto; display: inline-flex; opacity: .5; }
+.commit-caret svg { transition: transform .12s ease-out; transform: rotate(-90deg); }
+.commit-row.is-expanded .commit-caret svg { transform: rotate(0deg); }
+.commit-files { margin-top: 4px; border-top: 1px solid var(--gd-border); }
+.commit-file {
+  display: flex; align-items: center; gap: 8px; height: 26px;
+  font-size: 12px; cursor: pointer;
+}
+.commit-file:hover { background: var(--vscode-list-hoverBackground); }
+.commit-file .status-sq { width: 14px; height: 14px; font-size: 9px; }
+.commit-file-path {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; direction: rtl; text-align: left;
+}
+.commit-file-stat { flex: 0 0 auto; font-size: 11px; }
+.commit-file-more { color: var(--vscode-descriptionForeground); }
+@media (prefers-reduced-motion: reduce) { .commit-caret svg { transition: none; } }
 
 /* ---- diff ---- */
 #diffHeader {
@@ -674,6 +693,8 @@ const state = {
   selectedPath: null,
   selectedCommit: null,
   commitDetail: null,
+  expandedCommits: {},
+  commitFiles: {},
   commitFilePath: null,
   filter: "",
   hasMore: false,
@@ -1204,22 +1225,34 @@ function commitRow(c) {
   const avatarHtml = avatarUrl
     ? '<img class="commit-avatar" alt="" src="' + esc(avatarUrl) + '">'
     : "";
+  const expanded = !!state.expandedCommits[c.hash];
+  row.className += expanded ? " is-expanded" : "";
   row.innerHTML =
     '<div class="commit-msg">' + tagsHtml +
-    '<span class="commit-msg-text">' + esc((c.message || "").split("\n")[0]) + "</span></div>" +
+    '<span class="commit-msg-text">' + esc((c.message || "").split("\n")[0]) + "</span>" +
+    '<span class="commit-caret">' + ACTIONS.caret + "</span></div>" +
     '<div class="commit-meta">' + (c.isPushed === false ? '<span class="unpushed-dot"></span>' : "") +
     avatarHtml +
     esc(c.authorName || c.author || "") + " · " + esc(c.relativeTime || "") + "</div>";
+  if (expanded) {
+    row.appendChild(commitFiles(c));
+  }
   row.onclick = () => {
+    const opening = !state.expandedCommits[c.hash];
+    if (opening) state.expandedCommits[c.hash] = true;
+    else delete state.expandedCommits[c.hash];
+
     state.selectedCommit = c.hash;
     state.selectedPath = null;
-    state.commitDetail = null;
     state.commitFilePath = null;
     renderHistory();
-    // Narrow layout: the detail pane is hidden, so hand the commit to VS Code's
-    // changes editor (every file it touched) instead of an invisible pane.
+    if (!opening) {
+      return;
+    }
+    // The file list arrives with the commit detail and renders inline, so this
+    // works in a narrow panel too — where the diff pane is hidden.
+    post("getCommitDetails", { hash: c.hash });
     if (document.body.classList.contains("narrow")) {
-      post("openNativeDiff", { hash: c.hash });
       return;
     }
     $("diffHeader").hidden = false;
@@ -1227,10 +1260,58 @@ function commitRow(c) {
     $("rightEmpty").hidden = true;
     $("diffBody").hidden = false;
     $("diffBody").innerHTML = '<div class="diff-meta" style="padding:12px">Loading…</div>';
-    post("getCommitDetails", { hash: c.hash });
   };
   row.oncontextmenu = (e) => { e.preventDefault(); openCommitMenu(e.clientX, e.clientY, c); };
   return row;
+}
+/* Files of an expanded commit: pick one to see its changes (in the diff pane when
+   it is visible, in VS Code's own diff editor otherwise). */
+function commitFiles(c) {
+  const box = document.createElement("div");
+  box.className = "commit-files";
+  const files = state.commitFiles[c.hash];
+  if (!files) {
+    box.innerHTML = '<div class="commit-file commit-file-more">Loading files…</div>';
+    return box;
+  }
+  if (!files.length) {
+    box.innerHTML = '<div class="commit-file commit-file-more">No files in this commit</div>';
+    return box;
+  }
+  for (const f of files) {
+    const it = document.createElement("div");
+    it.className = "commit-file";
+    const L = statusLetter(f.status);
+    const stat =
+      (f.additions != null ? '<span class="cd-add">+' + f.additions + "</span> " : "") +
+      (f.deletions != null ? '<span class="cd-del">-' + f.deletions + "</span>" : "");
+    it.innerHTML =
+      '<span class="status-sq st-' + L + '">' + L + "</span>" +
+      '<span class="commit-file-path">' + esc(f.path) + "</span>" +
+      '<span class="commit-file-stat">' + stat + "</span>";
+    it.onclick = (e) => {
+      e.stopPropagation();
+      state.selectedCommit = c.hash;
+      state.commitFilePath = f.path;
+      if (document.body.classList.contains("narrow")) {
+        post("openNativeDiff", { hash: c.hash, filePath: f.path });
+        return;
+      }
+      state.selectedPath = null;
+      updateLayout();
+      $("diffHeader").hidden = false;
+      $("diffPath").textContent = f.path;
+      $("diffBody").innerHTML = '<div class="diff-meta" style="padding:8px">Loading…</div>';
+      post("selectFile", { hash: c.hash, path: f.path });
+    };
+    box.appendChild(it);
+  }
+  const all = document.createElement("div");
+  all.className = "commit-file commit-file-more";
+  all.textContent = "Open all " + files.length + " file" + (files.length === 1 ? "" : "s") + " in VS Code";
+  all.onclick = (e) => { e.stopPropagation(); post("openNativeDiff", { hash: c.hash }); };
+  box.appendChild(all);
+  return box;
 }
 function renderHistory() {
   const list = $("commitList");
@@ -1839,8 +1920,13 @@ window.addEventListener("message", (ev) => {
       updateLayout();
       break;
     }
-    case "updateHistory":
+    case "updateHistory": {
       state.history = msg.history || [];
+      const shown = {};
+      for (const c of state.history) {
+        if (state.commitFiles[c.hash]) shown[c.hash] = state.commitFiles[c.hash];
+      }
+      state.commitFiles = shown;
       state.hasMore = !!msg.hasMoreCommits;
       state.loadingMore = false;
       state.compare = null;
@@ -1852,6 +1938,7 @@ window.addEventListener("message", (ev) => {
       }
       renderHistory();
       break;
+    }
     case "loadMoreCommitsResponse": {
       const seen = new Set(state.history.map((c) => c.hash));
       state.history = state.history.concat((msg.history || []).filter((c) => !seen.has(c.hash)));
@@ -1952,10 +2039,16 @@ window.addEventListener("message", (ev) => {
       state.commitAvatars = msg.avatars || {};
       renderHistory();
       break;
-    case "commitDetail":
+    case "commitDetail": {
       state.commitDetail = msg.payload || null;
+      const hash = state.commitDetail && state.commitDetail.summary && state.commitDetail.summary.hash;
+      if (hash) {
+        state.commitFiles[hash] = state.commitDetail.files || [];
+        renderHistory();
+      }
       if (state.selectedCommit) renderCommitDetail();
       break;
+    }
     case "workingDiff":
       if (msg.payload && msg.payload.path === state.selectedPath) renderDiff(msg.payload.diff);
       break;

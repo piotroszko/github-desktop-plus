@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would orphan existing repositories and tokens)
 
 ### Added
+- Commits in the History list now expand: clicking one reveals the files it
+  touched inline (status letter, path, `+n −m`), and clicking a file shows its
+  changes — in the side-by-side diff pane when it is visible, in VS Code's own
+  diff editor in a narrow panel — with an "Open all N files in VS Code" row for
+  the whole commit. Several commits can be expanded at once, and in a narrow
+  panel a commit click no longer dumps every file into a VS Code diff before you
+  have picked one
 - **Generate commit message** button next to the commit Summary field: pipes the
   diff into an agent CLI (default `omp -p --model commit`, configurable with
   `githubDesktopPlus.commitMessageCommand` / `commitMessageArgs`) and fills the

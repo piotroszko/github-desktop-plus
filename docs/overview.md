@@ -98,6 +98,11 @@ one entry per file *per side* that changed
 both; a conflicted path appears once, unstaged. Row and section buttons post
 `stageFiles` / `unstageFiles` / `discardFiles`, handled by `WorkingTreeService`.
 
+Clicking a commit in the History list expands it in place: the commit's file
+list comes from the same `commitDetail` reply the diff pane uses (cached per
+hash, pruned when the history page changes), and a file click routes to the diff
+pane when it is visible or to `NativeDiff` otherwise.
+
 Commit precedence: with something staged, `commit` commits the index and only
 those files are committed; with nothing staged, the ticked files are staged and
 committed together (`commitFiles`). `amendCommit` follows the same rule — it
