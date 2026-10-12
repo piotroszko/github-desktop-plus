@@ -73,10 +73,16 @@ step here as leading up to a real, public action.
    No `Co-Authored-By` line.
 
 8. **Confirm before the irreversible step.** Tell the user exactly what's
-   about to happen: "This pushes `vX.Y.Z`, which triggers `release.yml`
-   to build a GitHub Release and publish to the VS Code Marketplace
-   (if `VSCE_PAT` is set). Proceed?" Wait for an explicit yes — never tag
+   about to happen: "This pushes `vX.Y.Z`, which triggers `release.yml` to
+   build the VSIX, create the GitHub Release and publish it to the VS Code
+   Marketplace and Open VSX. Proceed?" Wait for an explicit yes — never tag
    and push in the same breath as bumping the version.
+
+   The publish steps need the repository secrets `VSCE_PAT` (Azure DevOps PAT
+   with the Marketplace "Manage" scope) and `OVSX_PAT` (Open VSX access token
+   for the `piotroszko` namespace). `release.yml` publishes the VSIX it built
+   with `--skip-duplicate`, so re-running a release is safe. A missing secret
+   fails the run instead of being skipped silently.
 
 9. **Tag and push**, once confirmed:
    ```bash
@@ -89,13 +95,23 @@ step here as leading up to a real, public action.
     ```bash
     gh run list --workflow=release.yml --limit 1
     ```
-    Poll `gh run view <id> --json status,conclusion` until `completed`,
-    then check the "Upload to VS Code Marketplace" step's log for
-    `✅ Published to VS Code Marketplace` — that step has
-    `continue-on-error: true`, so a failed publish still shows the overall
-    run as green. Don't report success without checking that specific step.
+    Poll `gh run view <id> --json status,conclusion` until `completed`, then
+    confirm the `Publish to VS Code Marketplace` and `Publish to Open VSX`
+    steps both succeeded — `vsce publish` and `ovsx publish` write the real
+    result there. A red run after the GitHub Release exists usually means a
+    missing or expired secret; fix the secret and re-run the failed job
+    rather than moving the tag.
 
 If the marketplace step fails (e.g. a stale token, a secret-scanner false
 positive), do not force-push or move the existing tag to "fix" it — cut
 the next patch version instead, the same way v1.8.0 → v1.8.1 was handled
 in this repo's history.
+
+There is also a CI path: dispatching the `Version Bump` workflow
+(`gh workflow run version-bump.yml -f version_type=patch -f create_tag=true`)
+bumps the version, generates the `## [vX.Y.Z]` section from the commits since
+the last tag (keeping a hand-written section if one already exists), commits
+to `main`, and pushes the tag. It needs a `RELEASE_TOKEN` repository secret
+(a fine-grained PAT with `Contents: read and write`), because a tag pushed
+with the default `GITHUB_TOKEN` does **not** trigger `release.yml`. Prefer the
+steps above when the changelog entry deserves hand-written prose.
