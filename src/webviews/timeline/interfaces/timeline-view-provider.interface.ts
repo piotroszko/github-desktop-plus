@@ -47,4 +47,6 @@ export interface CommitDetail {
  */
 export interface ITimelineViewProvider extends vscode.WebviewViewProvider {
   refresh(): Promise<void>;
+  /** Whether the History panel is currently on screen. */
+  isVisible(): boolean;
 }

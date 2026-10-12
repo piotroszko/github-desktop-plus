@@ -26,6 +26,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
   private controller: TimelineController | undefined;
   private readonly htmlService: WebviewHtmlService;
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  private visible = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -60,13 +61,23 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     webviewView.webview.onDidReceiveMessage((message) =>
       this.controller?.handle(message),
     );
+    this.visible = webviewView.visible;
     webviewView.onDidChangeVisibility(() => {
+      this.visible = webviewView.visible;
       if (webviewView.visible) {
         void this.controller?.refresh();
       }
     });
+    webviewView.onDidDispose(() => {
+      this.visible = false;
+    });
 
     void this.controller.refresh();
+  }
+
+  /** Whether the History panel is on screen (false before it is first shown). */
+  isVisible(): boolean {
+    return this.visible;
   }
 
   /** Debounced: coalesces bursts (e.g. save-all) into a single recompute. */

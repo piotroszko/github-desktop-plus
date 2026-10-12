@@ -4,6 +4,7 @@ import { promises as fs } from "fs";
 import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import { AccountManager } from "./core/accounts/account-manager";
+import { AutoRefresh } from "./core/services/auto-refresh";
 import { RepositoryManager } from "./core/repositories/repository-manager";
 import { GIT_CONTENT_SCHEME, GitContentProvider } from "./core/git/native-diff";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
@@ -44,7 +45,31 @@ export async function activate(
     repositoriesProvider.refresh();
   };
 
+  // Git state can change without VS Code noticing (a `git` command in a
+  // terminal, another tool, an IDE plugin): poll the visible panel and refresh
+  // as soon as the window regains focus.
+  const autoRefresh = new AutoRefresh({
+    refresh: () => void timelineProvider.refresh(),
+    isVisible: () => timelineProvider.isVisible(),
+    intervalSeconds: () =>
+      vscode.workspace
+        .getConfiguration("githubDesktop")
+        .get<number>("autoRefreshInterval", 30),
+  });
+  autoRefresh.start();
+
   context.subscriptions.push(
+    autoRefresh,
+    vscode.window.onDidChangeWindowState((state) => {
+      if (state.focused) {
+        autoRefresh.focusGained();
+      }
+    }),
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("githubDesktop.autoRefreshInterval")) {
+        autoRefresh.start();
+      }
+    }),
     vscode.workspace.registerTextDocumentContentProvider(
       GIT_CONTENT_SCHEME,
       new GitContentProvider(),

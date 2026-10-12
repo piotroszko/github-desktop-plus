@@ -142,6 +142,17 @@
         }
       ]
     },
+    "configuration": {
+      "title": "GitHub Desktop",
+      "properties": {
+        "githubDesktop.autoRefreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 0,
+          "description": "Seconds between automatic refreshes of the History panel while it is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up. Set to 0 to disable periodic refreshes — the panel still refreshes when it regains focus or a file is saved in VS Code."
+        }
+      }
+    },
     "menus": {
       "view/item/context": [
         {
