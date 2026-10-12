@@ -6,6 +6,12 @@ import { TrackedRepository } from "../types";
 export function getPrimaryRepository(
   repositoryManager: RepositoryManager,
 ): TrackedRepository | undefined {
+  // An explicit in-extension selection wins; it never changes the workspace.
+  const selected = repositoryManager.getActiveRepository();
+  if (selected) {
+    return selected;
+  }
+
   const repositories = repositoryManager.getRepositories();
   if (repositories.length === 0) {
     return undefined;

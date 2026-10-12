@@ -12,14 +12,11 @@ export interface RepositoryContext {
   /** Every tracked repository, for the repository picker. */
   list(): TrackedRepository[];
   /**
-   * Makes `localPath` the active repository. If it is not already a workspace
-   * folder, opens that folder in VS Code (which reloads the window); otherwise
-   * just switches the in-session override.
-   *
-   * @returns `true` when the window is about to reload (caller should not
-   *   bother refreshing).
+   * Makes `localPath` the active repository for this session. Purely
+   * in-extension: the VS Code workspace folder, and therefore the window, is
+   * never changed.
    */
-  setActive(localPath: string): Promise<boolean>;
+  setActive(localPath: string): Promise<void>;
   /** Prompts for a local folder and tracks it as a repository. */
   addLocal(): Promise<void>;
   /** Runs the "clone repository" flow. */

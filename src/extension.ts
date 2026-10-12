@@ -83,7 +83,8 @@ export async function activate(
     ),
     vscode.commands.registerCommand(
       "githubDesktop.openRepository",
-      (repo?: TrackedRepository) => openRepository(repositoryManager, repo),
+      (repo?: TrackedRepository) =>
+        openRepository(repositoryManager, timelineProvider, repo),
     ),
     vscode.commands.registerCommand("githubDesktop.createIssue", () =>
       createIssue(accountManager, repositoryManager),
@@ -294,6 +295,7 @@ async function cloneRepository(
 
 async function openRepository(
   repositories: RepositoryManager,
+  timeline: TimelineViewProvider,
   repoArg?: TrackedRepository,
 ): Promise<void> {
   let repo = repoArg;
@@ -305,10 +307,10 @@ async function openRepository(
     return;
   }
 
-  const uri = vscode.Uri.file(repo.localPath);
-  await vscode.commands.executeCommand("vscode.openFolder", uri, {
-    forceNewWindow: false,
-  });
+  // Select the repo inside the extension only: the VS Code window keeps its
+  // current workspace (and focus) instead of switching to the picked folder.
+  repositories.setActiveRepository(repo.localPath);
+  await timeline.refresh();
 }
 
 async function createIssue(

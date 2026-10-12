@@ -85,10 +85,8 @@ export class TimelineController implements Refresher {
       .on("ready", () => this.refresh())
       .on("refresh", () => this.refresh())
       .on("selectRepository", async (m) => {
-        const reloading = await repos.setActive(m.path);
-        if (!reloading) {
-          await this.refresh();
-        }
+        await repos.setActive(m.path);
+        await this.refresh();
       })
       .on("addLocalRepository", async () => {
         await repos.addLocal();

@@ -19,22 +19,15 @@ import {
 
 /**
  * @description {@link RepositoryContext} backed by the extension's
- * {@link RepositoryManager} and the VS Code workspace. Holds an in-memory
- * "active repository" override so the user can switch repos from the picker
- * without changing the VS Code workspace folder.
+ * {@link RepositoryManager}. The user can switch repos from the picker without
+ * changing the VS Code workspace folder: the selection is remembered
+ * in-extension (see {@link RepositoryManager.setActiveRepository}) and the
+ * window is never reloaded or opened elsewhere.
  */
 export class WorkspaceRepositoryContext implements RepositoryContext {
-  private activePath: string | undefined;
-
   constructor(private readonly repositories: RepositoryManager) {}
 
   getPrimary(): TrackedRepository | undefined {
-    if (this.activePath) {
-      const pinned = this.repositories.findByPath(this.activePath);
-      if (pinned) {
-        return pinned;
-      }
-    }
     return getPrimaryRepository(this.repositories);
   }
 
@@ -42,21 +35,8 @@ export class WorkspaceRepositoryContext implements RepositoryContext {
     return this.repositories.getRepositories();
   }
 
-  async setActive(localPath: string): Promise<boolean> {
-    this.activePath = localPath;
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    const alreadyOpen = folders.some(
-      (f) => path.resolve(f.uri.fsPath) === path.resolve(localPath),
-    );
-    if (alreadyOpen) {
-      return false;
-    }
-    await vscode.commands.executeCommand(
-      "vscode.openFolder",
-      vscode.Uri.file(localPath),
-      { forceNewWindow: false },
-    );
-    return true;
+  async setActive(localPath: string): Promise<void> {
+    this.repositories.setActiveRepository(localPath);
   }
 
   async addLocal(): Promise<void> {
