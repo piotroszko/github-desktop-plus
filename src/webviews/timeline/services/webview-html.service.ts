@@ -176,6 +176,7 @@ const ICON = {
   push: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 1.5 3.75 5.75l1.06 1.06L7.25 4.4v7.35h1.5V4.4l2.44 2.41 1.06-1.06Z"/></svg>`,
   pull: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 14.5 3.75 10.25l1.06-1.06L7.25 11.6V4.25h1.5v7.35l2.44-2.41 1.06 1.06Z"/></svg>`,
   publish: `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 1 4 5h2.5v5h3V5H12ZM3 12.5h10V14H3Z"/></svg>`,
+  spinner: `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6" opacity=".3"/><path d="M14 8a6 6 0 0 0-6-6"/></svg>`,
   caret: `<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4 6l4 4 4-4Z"/></svg>`,
   check: `<svg viewBox="0 0 16 16" width="28" height="28" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>`,
   file: `<svg viewBox="0 0 16 16" width="28" height="28" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25Zm7.5-.25v2.75c0 .414.336.75.75.75h2.75Z"/></svg>`,
@@ -224,6 +225,13 @@ button, input, textarea { font: inherit; color: inherit; }
 .cell:last-child { border-right: 0; }
 .cell:hover { background: var(--vscode-list-hoverBackground); }
 .cell:active { background: var(--vscode-list-activeSelectionBackground); }
+.cell:disabled { cursor: default; }
+.cell:disabled:hover, .cell:disabled:active { background: transparent; }
+.cell.is-busy .cell-ico { opacity: 1; color: var(--gd-accent); }
+/* Long-running operations: a rotating arc next to the label. */
+.spin { animation: gd-spin .9s linear infinite; }
+@keyframes gd-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 .cell-ico { flex: 0 0 auto; display: flex; opacity: .75; }
 .cell-ico svg { width: 13px; height: 13px; }
 .cell-text { display: flex; min-width: 0; }
@@ -475,11 +483,19 @@ body:not(.narrow) #noChanges { display: none !important; }
 
 /* ---- popup menu ---- */
 .menu {
-  position: fixed; z-index: 50; min-width: 240px; max-height: 66vh; overflow: auto;
+  position: fixed; z-index: 50;
+  min-width: min(240px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
+  overflow-x: hidden; overflow-y: auto;
   background: var(--vscode-menu-background, var(--vscode-dropdown-background, var(--gd-chrome)));
   border: 1px solid var(--vscode-menu-border, var(--gd-border));
   border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.45); padding: 5px;
 }
+/* Long labels (branch names, paths) ellipsize instead of widening the menu
+   past the edge of the view, which the webview would clip. Every span inside a
+   row gets its own truncating box, whatever inline styles the row was built
+   with. */
+.menu-item span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .menu input.menu-filter {
   width: 100%; margin-bottom: 4px; padding: 6px 8px; border-radius: var(--gd-radius);
   background: var(--vscode-input-background); color: var(--vscode-input-foreground);
@@ -599,6 +615,7 @@ const state = {
   account: null,
   accounts: [],
   accountPinned: false,
+  busy: null,
   changes: [],
   history: [],
   branches: [],
@@ -638,7 +655,27 @@ function renderToolbar() {
 
   const r = state.remote || {};
   const ico = $("syncIco"), label = $("syncLabel"), count = $("syncCount"), cell = $("syncCell");
+  const sub = $("syncSub");
   const svg = { fetch: ${JSON.stringify(ICON.fetch)}, push: ${JSON.stringify(ICON.push)}, pull: ${JSON.stringify(ICON.pull)}, publish: ${JSON.stringify(ICON.publish)} };
+  // A sync operation in flight owns the cell: spinner, progress label, and no
+  // clicks until it settles (a second fetch/push just queues a second process).
+  const SYNC_BUSY_LABEL = { fetch: "Fetching…", pull: "Pulling…", push: "Pushing…", forcePush: "Force-pushing…", publish: "Publishing…" };
+  const busyLabel = state.busy ? SYNC_BUSY_LABEL[state.busy] : null;
+  if (busyLabel) {
+    cell.disabled = true;
+    cell.classList.add("is-busy");
+    ico.classList.add("spin");
+    ico.innerHTML = ${JSON.stringify(ICON.spinner)};
+    label.textContent = busyLabel;
+    sub.textContent = "In progress";
+    count.hidden = true;
+    cell.title = busyLabel;
+    cell.dataset.mode = "busy";
+    return;
+  }
+  cell.disabled = false;
+  cell.classList.remove("is-busy");
+  ico.classList.remove("spin");
   // Only claim "not published" when we positively know: a remote exists and
   // git reported no upstream. Anything uncertain (status not received yet)
   // defaults to Fetch rather than a misleading "Publish branch".
@@ -650,7 +687,6 @@ function renderToolbar() {
 
   ico.innerHTML = svg[mode === "diverged" ? "push" : mode];
   count.hidden = true;
-  const sub = $("syncSub");
   if (mode === "publish") { label.textContent = "Publish branch"; sub.textContent = "This branch is not on GitHub yet"; }
   else if (mode === "diverged") { label.textContent = "Diverged"; sub.textContent = "Local and origin differ — click for options"; count.hidden = false; count.textContent = "↑" + r.ahead + " ↓" + r.behind; }
   else if (mode === "pull") { label.textContent = "Pull origin"; sub.textContent = relFetched(r.lastFetched); count.hidden = false; count.textContent = "↓ " + r.behind; }
@@ -668,11 +704,9 @@ const SYNC_MENU = [
 function openSyncMenu(x, y) {
   openMenuAt(x, y, (m) => {
     for (const [cmd, label] of SYNC_MENU) {
-      const it = document.createElement("div");
-      it.className = "menu-item" + (cmd === "forcePush" ? " is-danger" : "");
-      it.textContent = label;
-      it.onclick = () => { closeMenu(); post(cmd); };
-      m.appendChild(it);
+      m.appendChild(
+        menuItem(label, () => { closeMenu(); post(cmd); }, cmd === "forcePush" ? "is-danger" : ""),
+      );
     }
   });
 }
@@ -877,8 +911,13 @@ function coAuthorTrailers() {
 function updateCommitBtn() {
   const n = state.selectedFiles.size;
   const hasMsg = $("summary").value.trim().length > 0;
-  const ok = hasMsg && (state.amend || n > 0);
   const btn = $("commitBtn");
+  if (state.busy === "commit") {
+    btn.disabled = true;
+    btn.textContent = "Committing…";
+    return;
+  }
+  const ok = hasMsg && (state.amend || n > 0);
   btn.disabled = !ok;
   if (state.amend) {
     btn.innerHTML = "Amend last commit" + (n > 0 ? " (+" + n + " file" + (n === 1 ? "" : "s") + ")" : "");
@@ -933,9 +972,16 @@ function renderOperation() {
   $("conflictText").textContent = nc > 0
     ? "⚠ " + state.operation + " paused — " + nc + " file(s) in conflict. Resolve each, then Continue."
     : "✔ All conflicts resolved. Click Continue to finish the " + state.operation + ".";
-  $("conflictContinue").disabled = nc > 0;
+  renderConflictButtons();
   if (state.operation) { state.tab = "changes"; $("pane-changes").hidden = false; $("pane-history").hidden = true;
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === "changes")); }
+}
+/* A continue/abort in flight locks both buttons — the operation must settle
+   before the other one makes sense. */
+function renderConflictButtons() {
+  const busy = !!state.busy;
+  $("conflictContinue").disabled = busy || state.conflicted.length > 0;
+  $("conflictAbort").disabled = busy;
 }
 function renderLastCommitBar() {
   const show = !state.operation && state.canUndo && !!state.lastCommitSummary;
@@ -1048,11 +1094,9 @@ function openCommitMenu(x, y, commit) {
   openMenuAt(x, y, (m) => {
     for (const entry of COMMIT_MENU) {
       if (entry[0] === "sep") { const s = document.createElement("div"); s.className = "menu-sep"; m.appendChild(s); continue; }
-      const it = document.createElement("div");
-      it.className = "menu-item" + (entry[0] === "reset" ? " is-danger" : "");
-      it.textContent = entry[1];
-      it.onclick = () => { closeMenu(); runCommitAction(entry[0], commit); };
-      m.appendChild(it);
+      m.appendChild(
+        menuItem(entry[1], () => { closeMenu(); runCommitAction(entry[0], commit); }, entry[0] === "reset" ? "is-danger" : ""),
+      );
     }
   });
 }
@@ -1228,18 +1272,48 @@ const menu = $("menu");
 let redrawBranchMenu = null;
 function closeMenu() { menu.hidden = true; menu.innerHTML = ""; document.removeEventListener("mousedown", onDocDown, true); redrawBranchMenu = null; }
 function onDocDown(e) { if (!menu.contains(e.target)) closeMenu(); }
+/* Rows/labels: keeping the label in its own box lets long text ellipsize
+   instead of widening the menu past the edge of the view. */
+function menuItem(label, onClick, className) {
+  const it = document.createElement("div");
+  it.className = "menu-item" + (className ? " " + className : "");
+  const span = document.createElement("span");
+  span.textContent = label;
+  it.appendChild(span);
+  it.onclick = onClick;
+  return it;
+}
+/* Sizes and positions the menu inside the webview's viewport — the view clips
+   anything drawn outside it, which used to cut the repository/branch dropdowns
+   off at the panel edge. Opens on the side with more room and scrolls
+   internally when the content still does not fit. */
+function placeMenu(anchor) {
+  const edge = 8, gap = 2;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  menu.style.maxHeight = "";
+  menu.style.maxWidth = "";
+  const natural = menu.getBoundingClientRect();
+  const width = Math.min(natural.width, vw - edge * 2);
+  const roomAbove = anchor.top - edge - gap;
+  const roomBelow = vh - anchor.bottom - edge - gap;
+  const openAbove = roomBelow < natural.height && roomAbove > roomBelow;
+  const room = Math.max(0, openAbove ? roomAbove : roomBelow);
+  const ceiling = Math.max(0, vh - edge * 2);
+  const maxHeight = Math.min(ceiling, Math.max(room, Math.min(ceiling, 240)));
+  if (natural.height > maxHeight) { menu.style.maxHeight = maxHeight + "px"; }
+  const h = Math.min(natural.height, maxHeight);
+  const x = Math.max(edge, Math.min(anchor.left, vw - edge - width));
+  const y = openAbove ? anchor.top - gap - h : anchor.bottom + gap;
+  menu.style.maxWidth = (vw - edge * 2) + "px";
+  menu.style.left = Math.round(x) + "px";
+  menu.style.top = Math.round(Math.max(edge, Math.min(y, vh - edge - h))) + "px";
+}
 function openMenu(anchor, build) {
   menu.innerHTML = ""; build(menu);
   menu.hidden = false;
-  const r = anchor.getBoundingClientRect();
   menu.style.visibility = "hidden";
   requestAnimationFrame(() => {
-    const mw = menu.offsetWidth, mh = menu.offsetHeight;
-    let x = r.left, y = r.bottom + 2;
-    if (x + mw > window.innerWidth - 8) x = window.innerWidth - 8 - mw;
-    if (y + mh > window.innerHeight - 8) y = Math.max(8, r.top - 2 - mh);
-    menu.style.left = Math.max(8, x) + "px";
-    menu.style.top = Math.max(8, y) + "px";
+    placeMenu(anchor.getBoundingClientRect());
     menu.style.visibility = "";
   });
   setTimeout(() => document.addEventListener("mousedown", onDocDown, true), 0);
@@ -1249,12 +1323,7 @@ function openMenuAt(x, y, build) {
   menu.hidden = false;
   menu.style.visibility = "hidden";
   requestAnimationFrame(() => {
-    const mw = menu.offsetWidth, mh = menu.offsetHeight;
-    let nx = x, ny = y;
-    if (nx + mw > window.innerWidth - 8) nx = window.innerWidth - 8 - mw;
-    if (ny + mh > window.innerHeight - 8) ny = Math.max(8, window.innerHeight - 8 - mh);
-    menu.style.left = Math.max(8, nx) + "px";
-    menu.style.top = Math.max(8, ny) + "px";
+    placeMenu({ top: y, bottom: y, left: x });
     menu.style.visibility = "";
   });
   setTimeout(() => document.addEventListener("mousedown", onDocDown, true), 0);
@@ -1291,10 +1360,7 @@ $("branchCell").onclick = () => {
     }
 
     const mkAction = (label, fn) => {
-      const it = document.createElement("div");
-      it.className = "menu-item"; it.textContent = label;
-      it.onclick = () => { closeMenu(); fn(); };
-      m.appendChild(it);
+      m.appendChild(menuItem(label, () => { closeMenu(); fn(); }));
     };
     mkAction("＋  New branch…", startNewBranch);
     if (state.currentBranch && state.branches.filter((b) => !b.startsWith("remotes/")).length > 1) {
@@ -1486,10 +1552,7 @@ $("repoCell").onclick = () => {
     }
     const sep = document.createElement("div"); sep.className = "menu-sep"; m.appendChild(sep);
     const add = (label, cmd) => {
-      const it = document.createElement("div");
-      it.className = "menu-item"; it.textContent = label;
-      it.onclick = () => { closeMenu(); post(cmd); };
-      m.appendChild(it);
+      m.appendChild(menuItem(label, () => { closeMenu(); post(cmd); }));
     };
     add("＋  Add local repository…", "addLocalRepository");
     add("⤓  Clone repository…", "cloneRepository");
@@ -1526,11 +1589,7 @@ $("avatar").onclick = () => {
     }
     if (state.accountPinned) {
       const sep = document.createElement("div"); sep.className = "menu-sep"; m.appendChild(sep);
-      const follow = document.createElement("div");
-      follow.className = "menu-item";
-      follow.textContent = "Follow the active account";
-      follow.onclick = () => { closeMenu(); post("selectRepoAccount", {}); };
-      m.appendChild(follow);
+      m.appendChild(menuItem("Follow the active account", () => { closeMenu(); post("selectRepoAccount", {}); }));
     }
   });
 };
@@ -1623,6 +1682,12 @@ window.addEventListener("message", (ev) => {
       state.currentBranch = msg.currentBranch || null;
       state.branchActivity = msg.branchActivity || {};
       renderToolbar(); updateCommitBtn(); updateLayout();
+      break;
+    case "busy":
+      state.busy = msg.task || null;
+      renderToolbar();
+      updateCommitBtn();
+      renderConflictButtons();
       break;
     case "updateRepository":
       state.repository = msg.repository || null;

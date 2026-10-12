@@ -90,7 +90,22 @@ export type InboundCommand = InboundMessage["command"];
  *  Outbound: extension -> webview
  * ------------------------------------------------------------------ */
 
+/**
+ * @description A long-running operation the webview should show as in flight,
+ * so buttons can disable and animate until it finishes (or fails).
+ */
+export type BusyTask =
+  | "fetch"
+  | "pull"
+  | "push"
+  | "forcePush"
+  | "publish"
+  | "commit"
+  | "continue"
+  | "abort";
+
 export type OutboundMessage =
+  | { command: "busy"; task: BusyTask | null }
   | { command: "updateRepository"; repository: RepositorySummary | null }
   | {
       command: "updateRepositoryList";

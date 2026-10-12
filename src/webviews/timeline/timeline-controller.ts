@@ -1,7 +1,7 @@
 import { AccountManager } from "../../core/accounts/account-manager";
 import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
 import { GitClientFactory } from "../../core/git/git-authenticator";
-import { InboundMessage } from "./messages";
+import { BusyTask, InboundMessage } from "./messages";
 import { RemoteStatus } from "./interfaces/repository-snapshot";
 import { MessageRouter } from "./message-router";
 import {
@@ -84,6 +84,11 @@ export class TimelineController implements Refresher {
     const conflict = new ConflictService(repos, notifier, git, this);
     const stash = new StashService(repos, notifier, git, this);
 
+    // Long-running operations announce themselves so the webview can disable
+    // and animate the button that started them until they settle.
+    const busy = <M, T>(task: BusyTask, run: (message: M) => T) =>
+      this.withBusy(channel, task, run);
+
     this.router = new MessageRouter(notifier)
       .on("ready", () => this.refresh())
       .on("refresh", () => this.refresh())
@@ -130,24 +135,24 @@ export class TimelineController implements Refresher {
       .on("cloneRepository", () => repos.clone())
       .on("stageFiles", (m) => working.stage(m.files))
       .on("unstageFiles", (m) => working.unstage(m.files))
-      .on("commit", (m) => working.commit(m.message))
-      .on("commitFiles", (m) => working.commitFiles(m.message, m.files))
-      .on("amendCommit", (m) => working.amend(m.message, m.files))
-      .on("undoLastCommit", () => working.undoLastCommit())
+      .on("commit", busy("commit", (m) => working.commit(m.message)))
+      .on("commitFiles", busy("commit", (m) => working.commitFiles(m.message, m.files)))
+      .on("amendCommit", busy("commit", (m) => working.amend(m.message, m.files)))
+      .on("undoLastCommit", busy("commit", () => working.undoLastCommit()))
       .on("discardFiles", (m) => working.discard(m.files))
       .on("markResolved", (m) => conflict.markResolved(m.files))
-      .on("continueOperation", () => conflict.continue())
-      .on("abortOperation", () => conflict.abort())
+      .on("continueOperation", busy("continue", () => conflict.continue()))
+      .on("abortOperation", busy("abort", () => conflict.abort()))
       .on("getStashes", () => this.refresh())
       .on("stashPush", (m) => stash.push(m.message))
       .on("stashApply", (m) => stash.apply(m.index, m.drop))
       .on("stashDrop", (m) => stash.drop(m.index))
       .on("getWorkingDiff", (m) => working.workingDiff(m.filePath))
-      .on("fetch", () => sync.fetch())
-      .on("pull", () => sync.pull())
-      .on("push", () => sync.push())
-      .on("forcePush", () => sync.forcePush())
-      .on("publish", () => sync.publish())
+      .on("fetch", busy("fetch", () => sync.fetch()))
+      .on("pull", busy("pull", () => sync.pull()))
+      .on("push", busy("push", () => sync.push()))
+      .on("forcePush", busy("forcePush", () => sync.forcePush()))
+      .on("publish", busy("publish", () => sync.publish()))
       .on("checkoutBranch", (m) => branch.checkout(m.branch))
       .on("createBranch", (m) => branch.create(m.branchName))
       .on("createBranchWithChanges", (m) =>
@@ -171,6 +176,26 @@ export class TimelineController implements Refresher {
       .on("createBranchFromCommit", (m) => commitActions.branchFrom(m.hash))
       .on("createTagFromCommit", (m) => commitActions.tagFrom(m.hash))
       .on("viewCommitOnGitHub", (m) => commitActions.viewOnGitHub(m.hash));
+  }
+
+  /**
+   * @description Wraps an operation so the webview shows `task` as in flight
+   * until it settles. The end announcement also fires when the operation
+   * throws, so a failed fetch cannot leave a button spinning forever.
+   */
+  private withBusy<M, T>(
+    channel: WebviewChannel,
+    task: BusyTask,
+    run: (message: M) => T,
+  ): (message: M) => Promise<void> {
+    return async (message: M) => {
+      channel.post({ command: "busy", task });
+      try {
+        await run(message);
+      } finally {
+        channel.post({ command: "busy", task: null });
+      }
+    };
   }
 
   /**

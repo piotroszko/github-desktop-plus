@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Loading states for the buttons that start long operations: the sync cell
+  (Fetch / Pull / Push / Publish / Force-push) switches to a spinner with a
+  progress label and ignores clicks until the operation settles, the Commit
+  button shows "Committing…" and stays disabled, and Continue / Abort lock while
+  a conflict operation is in flight. The state clears on success **and** on
+  failure (a failed fetch cannot leave a button spinning), and the spinner
+  honours `prefers-reduced-motion`
 - Automatic refresh of the History panel's git state: every 30 s while the panel
   is visible (setting `githubDesktop.autoRefreshInterval`, `0` disables it) and
   immediately when the VS Code window regains focus, so changes made outside
@@ -34,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   All three surfaces write the same per-repository default
 
 ### Fixed
+- The repository / branch / sync dropdowns and the commit context menus no
+  longer get cut off at the edge of the view: menus are now sized and placed
+  against the actual space in the panel (opening upward when there is more room
+  above), scroll internally when the list is long, and ellipsize long labels
+  instead of widening past the panel edge
 - The account avatar next to the commit summary in the History panel now
   follows account changes: switching accounts never refreshed the timeline, and
   the avatar always showed the active account instead of the repository's
