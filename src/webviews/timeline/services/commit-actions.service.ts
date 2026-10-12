@@ -109,7 +109,7 @@ export class CommitActionsService extends RepositoryScopedService {
       if (!name) {
         return;
       }
-      await this.git.withAuth(repo.localPath, async (g) => {
+      await this.git.withAuth(repo, async (g) => {
         await g.raw(["tag", "-a", name, hash, "-m", `Release ${name}`]);
         await g.raw(["push", "origin", `refs/tags/${name}`]);
       });

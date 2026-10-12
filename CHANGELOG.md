@@ -7,11 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `GitHub Desktop: Select Account for Repository`: pins a single tracked
+  repository to a GitHub account (context menu on the Repositories tree item, or
+  the command palette). Pinned repositories fetch/pull/push/publish, push tags,
+  check out PRs and load PRs/issues/avatars as that account, independent of the
+  extension's active account; the picker's "Follow the active account" entry
+  clears the pin. A signed-out selection falls back to the active account, and
+  the Repositories tree shows the effective account per repo
+
 ### Changed
 - Selecting another repository (repositories tree view, "Open Repository", or
   the timeline's repository picker) no longer switches the VS Code window: the
   choice is remembered in-extension for the session and the window keeps its
   current workspace folder
+- `GitHub Desktop: Create Issue` no longer pins an as-yet-unassigned repository
+  to the active account as a side effect; it uses the repository's effective
+  account and leaves the selection untouched
 
 ## [v1.9.0] - 2026-09-18
 

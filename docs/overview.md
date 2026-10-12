@@ -13,7 +13,8 @@ sign-in.
   tokens in `SecretStorage`);
 - registers the **Accounts** and **Repositories** tree views, and the
   **History** webview view (`githubDesktop.timeline`);
-- registers the sign-in / account / clone / open / issue / refresh commands;
+- registers the sign-in / account / clone / open / per-repository-account /
+  issue / refresh commands;
 - scans workspace folders for a `.git` dir and tracks the repositories it finds.
 
 ## Surfaces
@@ -57,9 +58,10 @@ Services depend on small interfaces (`ports.ts`), never on `vscode` or
 - `Browser` — open external URLs
 - `WebviewChannel` — post an `OutboundMessage`
 - `Refresher` — recompute-and-broadcast (implemented by `TimelineController`)
-- `GitClientFactory` — creates `simple-git` clients; `withAuth()` injects the
-  active account's token through ephemeral `GIT_CONFIG_*` env vars, so it is
-  **never written to `.git/config`**
+- `GitClientFactory` — creates `simple-git` clients; `withAuth(repo, fn)`
+  injects the token of the account selected for that repository (falling back
+  to the active account) as an ephemeral `-c http.https://github.com/.extraheader=…`
+  argument, so it is **never written to `.git/config`**
 
 VS Code implementations live in `adapters/vscode-adapters.ts`; the git factory
 is `AccountGitClientFactory` (`src/core/git/git-authenticator.ts`).
@@ -76,7 +78,21 @@ triggers a single recompute.
 
 `AccountManager` tries `gh auth token`, then VS Code's built-in GitHub auth,
 then a manually entered PAT. Tokens live only in `SecretStorage`. Git network
-operations get the token via `GitClientFactory.withAuth`.
+operations get the token via `GitClientFactory.withAuth`, and the timeline's
+GitHub API calls (pull requests, commit avatars) go through
+`AccountManager.getOctokit`.
+
+Each tracked repository carries an optional `accountId`:
+
+- set explicitly with **GitHub Desktop: Select Account for Repository** (also on
+  the Repositories tree item) — that account authenticates the repository's
+  fetch/pull/push/publish, tag pushes, PR checkout and issue/PR API calls, even
+  while a different account is active;
+- cleared with the picker's "Follow the active account" entry, which makes the
+  repository track whichever account is active;
+- falling back to the active account automatically when the selected account is
+  signed out or removed. `resolveRepositoryAccount()` in
+  `src/shared/utils/repo-account.ts` is the single source of that resolution.
 
 ## Build
 

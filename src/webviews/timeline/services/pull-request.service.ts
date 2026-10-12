@@ -80,7 +80,7 @@ export class PullRequestService extends RepositoryScopedService {
       }
       const local = `pr/${prNumber}`;
       try {
-        await this.git.withAuth(repo.localPath, (git) =>
+        await this.git.withAuth(repo, (git) =>
           git.fetch(["origin", `pull/${prNumber}/head:${local}`]),
         );
       } catch (error) {

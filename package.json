@@ -68,6 +68,12 @@
         "category": "GitHub Desktop"
       },
       {
+        "command": "githubDesktop.selectRepositoryAccount",
+        "title": "GitHub Desktop: Select Account for Repository",
+        "category": "GitHub Desktop",
+        "icon": "$(account)"
+      },
+      {
         "command": "githubDesktop.createIssue",
         "title": "GitHub Desktop: Create Issue",
         "category": "GitHub Desktop"
@@ -133,6 +139,16 @@
     },
     "menus": {
       "view/item/context": [
+        {
+          "command": "githubDesktop.selectRepositoryAccount",
+          "when": "view == githubDesktop.repositories && viewItem == githubDesktop.repository",
+          "group": "inline@1"
+        },
+        {
+          "command": "githubDesktop.selectRepositoryAccount",
+          "when": "view == githubDesktop.repositories && viewItem == githubDesktop.repository",
+          "group": "1_modification@1"
+        },
         {
           "command": "githubDesktop.signOutAccount",
           "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"

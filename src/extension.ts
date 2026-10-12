@@ -9,6 +9,7 @@ import { AccountsProvider } from "./ui/tree-views/accounts-provider";
 import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
 import { TrackedRepository } from "./shared/types";
+import { resolveRepositoryAccount } from "./shared/utils/repo-account";
 
 export async function activate(
   context: vscode.ExtensionContext,
@@ -85,6 +86,16 @@ export async function activate(
       "githubDesktop.openRepository",
       (repo?: TrackedRepository) =>
         openRepository(repositoryManager, timelineProvider, repo),
+    ),
+    vscode.commands.registerCommand(
+      "githubDesktop.selectRepositoryAccount",
+      (repo?: TrackedRepository) =>
+        selectRepositoryAccount(
+          accountManager,
+          repositoryManager,
+          timelineProvider,
+          repo,
+        ),
     ),
     vscode.commands.registerCommand("githubDesktop.createIssue", () =>
       createIssue(accountManager, repositoryManager),
@@ -313,6 +324,80 @@ async function openRepository(
   await timeline.refresh();
 }
 
+/**
+ * @description Picks the GitHub account a single repository authenticates as.
+ * Scoping is per-repository only: it never changes the extension's active
+ * account, so other repositories keep the account they were using.
+ */
+async function selectRepositoryAccount(
+  accounts: AccountManager,
+  repositories: RepositoryManager,
+  timeline: TimelineViewProvider,
+  repoArg?: TrackedRepository,
+): Promise<void> {
+  const repo = repoArg ?? (await pickRepository(repositories));
+  if (!repo) {
+    vscode.window.showInformationMessage("Select or clone a repository first.");
+    return;
+  }
+
+  const stored = accounts.getAccounts();
+  if (stored.length === 0) {
+    vscode.window.showInformationMessage("Sign in to a GitHub account first.");
+    return;
+  }
+
+  const active = accounts.getActiveAccount();
+  const current = repo.accountId
+    ? accounts.getAccountById(repo.accountId)
+    : undefined;
+
+  const items: (vscode.QuickPickItem & { accountId?: string })[] = stored.map(
+    (account) => ({
+      label: account.login,
+      description: [
+        account.id === repo.accountId ? "selected" : undefined,
+        account.id === active?.id ? "active" : undefined,
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      accountId: account.id,
+    }),
+  );
+  if (repo.accountId) {
+    items.push({
+      label: "$(sync) Follow the active account",
+      description: `currently ${current?.login ?? repo.accountId}`,
+    });
+  }
+
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: `Account for ${repo.owner}/${repo.name}${
+      current
+        ? ` (currently ${current.login})`
+        : " (currently the active account)"
+    }`,
+    ignoreFocusOut: true,
+  });
+  if (!picked) {
+    return;
+  }
+
+  await repositories.updateRepository(repo.id, {
+    accountId: picked.accountId,
+  });
+  await timeline.refresh();
+
+  const effective = resolveRepositoryAccount(accounts, repo);
+  vscode.window.showInformationMessage(
+    picked.accountId
+      ? `${repo.owner}/${repo.name} now authenticates as ${effective?.login ?? picked.label}.`
+      : `${repo.owner}/${repo.name} now follows the active account${
+          active ? ` (${active.login})` : ""
+        }.`,
+  );
+}
+
 async function createIssue(
   accounts: AccountManager,
   repositories: RepositoryManager,
@@ -323,18 +408,15 @@ async function createIssue(
     return;
   }
 
-  let accountId = repo.accountId;
-  let account = accountId ? accounts.getAccountById(accountId) : undefined;
+  const account = resolveRepositoryAccount(accounts, repo);
   if (!account) {
-    account = accounts.getActiveAccount() ?? (await accounts.signIn());
-    if (!account) {
-      return;
-    }
-    accountId = account.id;
-    await repositories.updateRepository(repo.id, { accountId });
+    vscode.window.showInformationMessage(
+      "Sign in to a GitHub account to create an issue.",
+    );
+    return;
   }
 
-  const octokit = await accounts.getOctokit(accountId);
+  const octokit = await accounts.getOctokit(account.id);
   if (!octokit) {
     return;
   }

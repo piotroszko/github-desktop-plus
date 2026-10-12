@@ -26,7 +26,7 @@ export class SyncService extends RepositoryScopedService {
 
   fetch(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      await this.git.withAuth(repo.localPath, (g) => g.fetch());
+      await this.git.withAuth(repo, (g) => g.fetch());
       this.notifier.info("Fetched from remote");
       await this.refresher.refresh();
     });
@@ -35,7 +35,7 @@ export class SyncService extends RepositoryScopedService {
   pull(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       try {
-        await this.git.withAuth(repo.localPath, (g) => g.pull());
+        await this.git.withAuth(repo, (g) => g.pull());
       } catch (error) {
         if (await this.reportIfConflict(repo.localPath, "pull")) {
           return;
@@ -51,7 +51,7 @@ export class SyncService extends RepositoryScopedService {
     return this.withRepo(async (repo) => {
       const git = this.git.plain(repo.localPath);
       const { current, tracking } = await git.status();
-      await this.git.withAuth(repo.localPath, (g) =>
+      await this.git.withAuth(repo, (g) =>
         tracking ? g.push() : g.push(["-u", "origin", current ?? "HEAD"]),
       );
       this.notifier.info("Pushed to remote");
@@ -79,9 +79,7 @@ export class SyncService extends RepositoryScopedService {
       if (!ok) {
         return;
       }
-      await this.git.withAuth(repo.localPath, (g) =>
-        g.push(["--force-with-lease"]),
-      );
+      await this.git.withAuth(repo, (g) => g.push(["--force-with-lease"]));
       this.notifier.info("Force-pushed to remote");
       await this.refresher.refresh();
     });
@@ -101,9 +99,7 @@ export class SyncService extends RepositoryScopedService {
         return;
       }
       const remote = remotes[0].name;
-      await this.git.withAuth(repo.localPath, (g) =>
-        g.push(["-u", remote, current]),
-      );
+      await this.git.withAuth(repo, (g) => g.push(["-u", remote, current]));
       this.notifier.info(`Published '${current}' to ${remote}`);
       await this.refresher.refresh();
     });

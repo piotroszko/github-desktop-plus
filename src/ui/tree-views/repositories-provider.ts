@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { RepositoryManager } from "../../core/repositories/repository-manager";
 import { AccountManager } from "../../core/accounts/account-manager";
 import { TrackedRepository } from "../../shared/types";
+import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
 
 class RepositoryItem extends vscode.TreeItem {
   constructor(repo: TrackedRepository, accountLabel: string | undefined) {
@@ -61,12 +62,14 @@ export class RepositoriesProvider
       return [item];
     }
 
-    const accounts = this.accounts.getAccounts();
     return repos.map((repo) => {
-      const account = repo.accountId
-        ? accounts.find((acc) => acc.id === repo.accountId)
+      const account = resolveRepositoryAccount(this.accounts, repo);
+      const label = account
+        ? repo.accountId
+          ? account.login
+          : `${account.login} (active)`
         : undefined;
-      return new RepositoryItem(repo, account?.login);
+      return new RepositoryItem(repo, label);
     });
   }
 

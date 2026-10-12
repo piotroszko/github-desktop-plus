@@ -1,5 +1,7 @@
 import simpleGit, { SimpleGit } from "simple-git";
 import { AccountManager } from "../accounts/account-manager";
+import { TrackedRepository } from "../../shared/types";
+import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
 
 /**
  * @description
@@ -18,30 +20,35 @@ export interface GitClientFactory {
   plain(repoPath: string): SimpleGit;
 
   /**
-   * Runs `fn` with a client whose network operations carry the active GitHub
-   * account's token.
+   * Runs `fn` with a client whose network operations carry the token of the
+   * account selected for `repo` (falling back to the active account when the
+   * repository has no selection, or the selected account is signed out).
    *
    * The token is injected as an ephemeral `-c http.<url>.extraheader=…` on each
    * git invocation. It is **never** written to `.git/config`, so there is
    * nothing to clean up and no shared state to race on.
    *
-   * If no account is active or no token is available, `fn` still runs with a
-   * plain client (git may then fall back to a system credential helper).
+   * If no account is available, `fn` still runs with a plain client (git may
+   * then fall back to a system credential helper).
    *
-   * @param repoPath - Absolute path to the repository working directory
+   * @param repo - The tracked repository the operation targets
    * @param fn - Callback receiving the (possibly authenticated) client
    * @returns Whatever `fn` resolves to
    * @throws Propagates any error thrown by `fn`
    *
    * @example
-   * await gitFactory.withAuth(repo.localPath, (git) => git.push(["-u", "origin", branch]));
+   * await gitFactory.withAuth(repo, (git) => git.push(["-u", "origin", branch]));
    */
-  withAuth<T>(repoPath: string, fn: (git: SimpleGit) => Promise<T>): Promise<T>;
+  withAuth<T>(
+    repo: TrackedRepository,
+    fn: (git: SimpleGit) => Promise<T>,
+  ): Promise<T>;
 }
 
 /**
  * @description Default {@link GitClientFactory} backed by the extension's
- * {@link AccountManager}. Resolves the token of the currently active account.
+ * {@link AccountManager}. Resolves the token of the account selected for the
+ * repository, falling back to the active account.
  */
 export class AccountGitClientFactory implements GitClientFactory {
   constructor(private readonly accounts: AccountManager) {}
@@ -51,12 +58,12 @@ export class AccountGitClientFactory implements GitClientFactory {
   }
 
   async withAuth<T>(
-    repoPath: string,
+    repo: TrackedRepository,
     fn: (git: SimpleGit) => Promise<T>,
   ): Promise<T> {
-    const token = await this.resolveToken();
+    const token = await this.resolveToken(repo);
     if (!token) {
-      return fn(simpleGit(repoPath));
+      return fn(simpleGit(repo.localPath));
     }
 
     const header = `Authorization: Basic ${Buffer.from(
@@ -67,16 +74,30 @@ export class AccountGitClientFactory implements GitClientFactory {
     // nothing to clean up. (We do NOT call `.env()` here — passing GIT_* vars
     // through trips simple-git's unsafe-env guard; GIT_TERMINAL_PROMPT is set
     // once at activation instead.)
-    const git = simpleGit(repoPath, {
+    const git = simpleGit(repo.localPath, {
       config: [`http.https://github.com/.extraheader=${header}`],
     });
 
     return fn(git);
   }
 
-  private async resolveToken(): Promise<string | undefined> {
+  private async resolveToken(
+    repo: TrackedRepository,
+  ): Promise<string | undefined> {
+    const selected = resolveRepositoryAccount(this.accounts, repo);
+    if (!selected) {
+      return undefined;
+    }
+
+    const token = await this.accounts.getToken(selected.id);
+    if (token) {
+      return token;
+    }
+
+    // The selected account's credentials are gone (signed out, token revoked);
+    // keep working with the active account rather than dropping to anonymous.
     const active = this.accounts.getActiveAccount();
-    if (!active) {
+    if (!active || active.id === selected.id) {
       return undefined;
     }
     return (await this.accounts.getToken(active.id)) ?? undefined;
