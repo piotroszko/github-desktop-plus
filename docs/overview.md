@@ -15,6 +15,10 @@ sign-in.
   **History** webview view (`githubDesktop.timeline`);
 - registers the sign-in / account / clone / open / per-repository-account /
   issue / refresh commands;
+- arms `AutoRefresh` (`src/core/services/auto-refresh.ts`): it re-reads the
+  visible panel's git state every `githubDesktop.autoRefreshInterval` seconds
+  (default 30, `0` disables) and immediately on window focus, so state changed
+  outside VS Code surfaces without reopening the view;
 - scans workspace folders for a `.git` dir and tracks the repositories it finds.
 
 ## Surfaces
@@ -77,7 +81,9 @@ is `AccountGitClientFactory` (`src/core/git/git-authenticator.ts`).
 (changes, history page, branches + activity, remote status, tags, in-progress
 operation, conflicted paths, `canUndo`, stashes) per refresh.
 `TimelineViewProvider` debounces refreshes (400 ms) so a burst of file saves
-triggers a single recompute.
+triggers a single recompute. Refreshes are triggered by saving a file, showing
+the panel, regaining window focus, an account change, and `AutoRefresh`'s
+interval while the panel is visible.
 
 ## Authentication
 

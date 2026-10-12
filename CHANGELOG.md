@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automatic refresh of the History panel's git state: every 30 s while the panel
+  is visible (setting `githubDesktop.autoRefreshInterval`, `0` disables it) and
+  immediately when the VS Code window regains focus, so changes made outside
+  VS Code (git commands in a terminal, other tools) appear without re-opening
+  the view
 - Native diff fallback: below ~620px the History panel hides its own diff pane,
   so clicking a changed file (working tree) or a commit now opens VS Code's own
   diff editor — `vscode.diff` for one file, the changes editor (`vscode.changes`)

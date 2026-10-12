@@ -89,7 +89,7 @@
 - **File staging/unstaging** with individual file controls
 - **Commit message editing** with keyboard shortcuts (Ctrl+Enter)
 - **Smart action buttons** (Stage All, Unstage All, Commit, Sync)
-- **Real-time updates** with file watching and auto-refresh
+- **Real-time updates** — refreshes on save, when the panel is shown or the window regains focus, and every 30 s while the panel is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up without re-opening the view
 
 ### 🎛️ **Timeline Header**
 - **Dynamic sync status** showing Push/Pull/Fetch operations
@@ -156,6 +156,10 @@ Access these commands via Command Palette (`Ctrl+Shift+P`):
 - `GitHub Desktop: Use Account for Current Repository` - Right-click an account in the Accounts panel to apply it to the repository you are working on
 - `GitHub Desktop: Create Issue` - Create GitHub issues directly
 - `GitHub Desktop: Refresh Views` - Refresh all panels
+
+### **⚙️ Settings**
+
+- `githubDesktop.autoRefreshInterval` (number, default `30`) - Seconds between automatic refreshes of the History panel while it is visible. Set to `0` to disable periodic refreshes; the panel still refreshes when it regains focus or a file is saved in VS Code.
 
 ### **🎨 Keyboard & Mouse Shortcuts**
 - **Ctrl+Enter** - Commit staged changes
