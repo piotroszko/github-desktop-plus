@@ -2,6 +2,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { RepositoryManager } from "@core/repositories/repository-manager";
 import { getPrimaryRepository } from "@shared/utils/repo-selection";
+import { CommitDraftStore } from "@core/services/commit-draft-store";
 
 /**
  * Renders the timeline webview as a self-contained GitHub Desktop-style UI:
@@ -15,6 +16,7 @@ export class WebviewHtmlService {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager,
+    private readonly drafts: CommitDraftStore,
   ) {}
 
   generateHtml(webview: vscode.Webview): string {
@@ -27,6 +29,12 @@ export class WebviewHtmlService {
             path: repository.localPath,
             remote: repository.remoteUrl,
           }
+        : null,
+      // Restore the half-written commit message and ticks the panel was showing
+      // before it was recreated.
+      draftPath: repository?.localPath ?? null,
+      draft: repository
+        ? (this.drafts.get(repository.localPath) ?? null)
         : null,
     };
 
@@ -640,6 +648,9 @@ const state = {
   repository: (window.__INITIAL__ && window.__INITIAL__.repository) || null,
   repositories: [],
   activeRepoPath: null,
+  draftPath: null,
+  draftedSelection: null,
+  selectionInitialized: false,
   account: null,
   accounts: [],
   accountPinned: false,
@@ -795,7 +806,38 @@ function visibleChanges() {
   const f = state.filter.trim().toLowerCase();
   return state.changes.filter((c) => !f || c.path.toLowerCase().indexOf(f) >= 0);
 }
+const INITIAL_DRAFT = (window.__INITIAL__ && window.__INITIAL__.draft) || null;
 const ACTIONS = { plus: ${JSON.stringify(ICON.plus)}, minus: ${JSON.stringify(ICON.minus)}, discard: ${JSON.stringify(ICON.discard)}, caret: ${JSON.stringify(ICON.caret)} };
+/* ---------- commit draft persistence ---------- */
+function applyDraft(draft, path) {
+  const d = draft || {};
+  state.draftPath = path || null;
+  state.draftedSelection = Array.isArray(d.selected) ? d.selected : null;
+  state.selectedFiles = new Set(state.draftedSelection || []);
+  state.selectionInitialized = false;
+  $("summary").value = d.summary || "";
+  $("description").value = d.description || "";
+  state.coAuthors = d.coAuthors || "";
+  $("coAuthors").value = state.coAuthors;
+  $("coAuthors").hidden = !state.coAuthors;
+  $("coAuthToggle").classList.toggle("is-on", !!state.coAuthors);
+  updateCommitBtn();
+}
+function currentDraft() {
+  return {
+    summary: $("summary").value,
+    description: $("description").value,
+    coAuthors: state.coAuthors || "",
+    selected: Array.from(state.selectedFiles),
+  };
+}
+let draftTimer = null;
+function saveDraft(now) {
+  if (!state.draftPath) return;
+  if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+  if (now) { post("updateDraft", { path: state.draftPath, draft: currentDraft() }); return; }
+  draftTimer = setTimeout(() => { draftTimer = null; saveDraft(true); }, 400);
+}
 function uniquePaths(entries) {
   const paths = new Set();
   for (const c of entries) paths.add(c.path);
@@ -817,6 +859,7 @@ function changeRow(c, section) {
     if (isConflict) return;
     if (cb.checked) state.selectedFiles.add(c.path); else state.selectedFiles.delete(c.path);
     renderChanges();
+    saveDraft();
   };
   const sq = document.createElement("span");
   sq.className = "status-sq st-" + L;
@@ -1002,6 +1045,7 @@ $("allCheck").onclick = () => {
   if ($("allCheck").checked) state.changes.forEach((c) => state.selectedFiles.add(c.path));
   else state.selectedFiles.clear();
   renderChanges();
+  saveDraft();
 };
 $("filter").oninput = (e) => { state.filter = e.target.value; renderChanges(); };
 
@@ -1043,7 +1087,8 @@ function updateCommitBtn() {
       "to <strong>" + esc(state.currentBranch || "branch") + "</strong>";
   }
 }
-$("summary").oninput = updateCommitBtn;
+$("summary").oninput = () => { updateCommitBtn(); saveDraft(); };
+$("description").oninput = () => saveDraft();
 function doCommit() {
   const summary = $("summary").value.trim();
   const n = state.selectedFiles.size;
@@ -1069,7 +1114,7 @@ $("commitBtn").onclick = doCommit;
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); doCommit(); }
   });
 });
-$("coAuthors").oninput = (e) => { state.coAuthors = e.target.value; };
+$("coAuthors").oninput = (e) => { state.coAuthors = e.target.value; saveDraft(); };
 $("coAuthToggle").onclick = () => {
   const el = $("coAuthors");
   el.hidden = !el.hidden;
@@ -1732,9 +1777,19 @@ window.addEventListener("message", (ev) => {
       state.selectedFiles = new Set(
         Array.from(state.selectedFiles).filter((p) => paths.has(p)),
       );
-      state.changes.forEach((c) => {
-        if (!prevPaths.has(c.path)) state.selectedFiles.add(c.path);
-      });
+      if (!state.selectionInitialized) {
+        // First snapshot after (re)load: a restored draft's ticks win; without
+        // one, everything is ticked like before.
+        state.selectionInitialized = true;
+        const drafted = state.draftedSelection;
+        state.changes.forEach((c) => {
+          if (!drafted || drafted.indexOf(c.path) >= 0) state.selectedFiles.add(c.path);
+        });
+      } else {
+        state.changes.forEach((c) => {
+          if (!prevPaths.has(c.path)) state.selectedFiles.add(c.path);
+        });
+      }
       if (state.selectedPath && !paths.has(state.selectedPath)) {
         state.selectedPath = null;
         $("diffHeader").hidden = true;
@@ -1770,7 +1825,9 @@ window.addEventListener("message", (ev) => {
       state.coAuthors = "";
       state.selectedFiles.clear();
       state.amend = false; $("amendCheck").checked = false;
+      state.draftedSelection = [];
       updateCommitBtn();
+      saveDraft(true);
       break;
     case "mergeConflict":
       // Detailed state arrives via updateOperation on the following refresh;
@@ -1813,6 +1870,15 @@ window.addEventListener("message", (ev) => {
       renderToolbar();
       updateCommitBtn();
       renderConflictButtons();
+      break;
+    case "draft":
+      // Only re-key the inputs when the repository in view actually changed, so
+      // a refresh (or the 30 s poll) never clobbers what is being typed.
+      if (msg.path !== state.draftPath) {
+        applyDraft(msg.draft, msg.path);
+        renderChanges();
+        updateLayout();
+      }
       break;
     case "updateRepository":
       state.repository = msg.repository || null;
@@ -1874,6 +1940,7 @@ function setAvatar() {
   el.textContent = s.slice(0, 2);
   el.title = (a && a.login ? a.login + "\n" : "") + tip;
 }
+applyDraft(INITIAL_DRAFT, (window.__INITIAL__ && window.__INITIAL__.draftPath) || null);
 applyWidth();
 setAvatar();
 renderToolbar();

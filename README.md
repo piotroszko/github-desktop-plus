@@ -88,6 +88,7 @@
 - **Collapsible sections** for staged and unstaged changes
 - **File staging/unstaging** with individual file controls
 - **Commit message editing** with keyboard shortcuts (Ctrl+Enter)
+- **Draft persistence** — the message, description, co-authors and ticked files are kept per repository, so they survive hiding the view, reloading the window, or switching to another repository
 - **Smart action buttons** (Stage All, Unstage All, Commit, Sync)
 - **Stage / unstage / discard on hover** — per file, plus per-section buttons for multi-file operations; commit takes the staged files from the index, and with nothing staged it commits the ticked files together
 - **Real-time updates** — refreshes on save, when the panel is shown or the window regains focus, and every 30 s while the panel is visible, so changes made outside VS Code (git commands in a terminal, other tools) show up without re-opening the view

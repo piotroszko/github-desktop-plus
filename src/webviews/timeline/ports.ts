@@ -1,4 +1,4 @@
-import { TrackedRepository } from "../../shared/types";
+import { CommitDraft, TrackedRepository } from "../../shared/types";
 import { OutboundMessage } from "./messages";
 
 /**
@@ -53,6 +53,17 @@ export interface NativeDiff {
     hash: string,
     files: string[],
   ): Promise<void>;
+}
+
+/**
+ * @description Persists the commit box draft per repository so it survives the
+ * webview being recreated and repository switches.
+ */
+export interface DraftStore {
+  /** The stored draft for `localPath`, or `undefined` when there is none yet. */
+  get(localPath: string): CommitDraft | undefined;
+  /** Replaces the stored draft for `localPath`. */
+  set(localPath: string, draft: CommitDraft): Promise<void>;
 }
 
 /**

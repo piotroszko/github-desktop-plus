@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Commit box drafts persist per repository: the summary, description, co-authors
+  and ticked files come back after the panel is recreated (view hidden, window
+  reloaded) and when switching between repositories. Refreshes never overwrite
+  what you are typing, and a successful commit clears that repository's draft
 - The Changes tab now shows **Staged Changes** and **Changes** as separate
   sections, like VS Code's own source control: each is collapsible, carries a
   count, and has its own actions (stage all / unstage all / discard all). Every

@@ -12,6 +12,7 @@ import {
   WorkspaceRepositoryContext,
 } from "./adapters/vscode-adapters";
 import { NativeDiffViewer } from "../../core/git/native-diff";
+import { CommitDraftStore } from "../../core/services/commit-draft-store";
 import { TimelineController } from "./timeline-controller";
 import { WebviewHtmlService } from "./services/webview-html.service";
 
@@ -25,6 +26,7 @@ const REFRESH_DEBOUNCE_MS = 400;
 export class TimelineViewProvider implements ITimelineViewProvider {
   private controller: TimelineController | undefined;
   private readonly htmlService: WebviewHtmlService;
+  private readonly drafts: CommitDraftStore;
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
   private visible = false;
 
@@ -33,7 +35,12 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     private readonly repositories: RepositoryManager,
     private readonly accounts: AccountManager,
   ) {
-    this.htmlService = new WebviewHtmlService(context, repositories);
+    this.drafts = new CommitDraftStore(context.globalState);
+    this.htmlService = new WebviewHtmlService(
+      context,
+      repositories,
+      this.drafts,
+    );
   }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -56,6 +63,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
       accounts: this.accounts,
       githubApi: new AccountGitHubApi(this.accounts),
       nativeDiff: new VsCodeNativeDiff(new NativeDiffViewer()),
+      drafts: this.drafts,
     });
 
     webviewView.webview.onDidReceiveMessage((message) =>

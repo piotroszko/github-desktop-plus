@@ -66,6 +66,11 @@ Services depend on small interfaces (`ports.ts`), never on `vscode` or
   injects the token of the account selected for that repository (falling back
   to the active account) as an ephemeral `-c http.https://github.com/.extraheader=…`
   argument, so it is **never written to `.git/config`**
+- `DraftStore` — the commit box draft (message, description, co-authors, ticked
+  files) per repository, implemented by `CommitDraftStore`
+  (`src/core/services/commit-draft-store.ts`) on top of `globalState`; the draft
+  is embedded in the webview's initial data and re-announced on every refresh,
+  and the webview only re-applies it when the repository in view changed
 - `NativeDiff` — opens a change in VS Code's own editors (`vscode.diff` /
   `vscode.changes`), used whenever the webview's diff pane is hidden (narrow
   panel). The "before" side comes from `GitContentProvider`

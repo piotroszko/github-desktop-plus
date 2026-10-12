@@ -6,6 +6,7 @@ import { RemoteStatus } from "./interfaces/repository-snapshot";
 import { MessageRouter } from "./message-router";
 import {
   Browser,
+  DraftStore,
   GitHubApi,
   NativeDiff,
   Notifier,
@@ -55,9 +56,10 @@ export class TimelineController implements Refresher {
       accounts: AccountManager;
       githubApi: GitHubApi;
       nativeDiff: NativeDiff;
+      drafts: DraftStore;
     },
   ) {
-    const { repos, notifier, channel, browser, git, nativeDiff } = deps;
+    const { repos, notifier, channel, browser, git, nativeDiff, drafts } = deps;
 
     this.data = new RepositoryDataService(repos, git);
 
@@ -95,6 +97,14 @@ export class TimelineController implements Refresher {
       .on("selectRepository", async (m) => {
         await repos.setActive(m.path);
         await this.refresh();
+      })
+      .on("updateDraft", async (m) => {
+        // Store under the path the webview was showing when it typed: a late
+        // debounce after a repository switch must not land on the new one.
+        const known = repos.list().some((repo) => repo.localPath === m.path);
+        if (known) {
+          await drafts.set(m.path, m.draft);
+        }
       })
       .on("selectRepoAccount", async (m) => {
         const repo = repos.getPrimary();
@@ -222,6 +232,14 @@ export class TimelineController implements Refresher {
 
     this.lastRemoteStatus = snapshot.remoteStatus;
 
+    const draftRepo = this.deps.repos.getPrimary();
+    channel.post({
+      command: "draft",
+      path: draftRepo?.localPath ?? null,
+      draft: draftRepo
+        ? this.deps.drafts.get(draftRepo.localPath) ?? null
+        : null,
+    });
     channel.post({ command: "updateChanges", changes: snapshot.changes });
     channel.post({
       command: "updateHistory",
