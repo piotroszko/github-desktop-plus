@@ -7,7 +7,7 @@
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/piotroszko/github-desktop"
+    "url": "https://github.com/piotroszko/github-desktop-plus"
   },
   "engines": {
     "vscode": ">=1.84.0",

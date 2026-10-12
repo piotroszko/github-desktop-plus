@@ -231,7 +231,7 @@ When creating a personal access token, ensure these scopes:
 - For organization repos, ensure proper access rights
 
 ### **🐛 Found a Bug?**
-[Report issues on GitHub](https://github.com/piotroszko/github-desktop/issues) - we fix them fast!
+[Report issues on GitHub](https://github.com/piotroszko/github-desktop-plus/issues) - we fix them fast!
 
 ---
 
@@ -241,8 +241,8 @@ We welcome contributions! Here's how you can help:
 
 ### **For Users**
 - ⭐ **Star the repository** if you find it useful
-- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/piotroszko/github-desktop/issues)
-- 💡 **Suggest features** via [GitHub Discussions](https://github.com/piotroszko/github-desktop/discussions)
+- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/piotroszko/github-desktop-plus/issues)
+- 💡 **Suggest features** via [GitHub Discussions](https://github.com/piotroszko/github-desktop-plus/discussions)
 - 📝 **Write reviews** and share your experience
 
 ### **For Developers**
@@ -251,7 +251,7 @@ We welcome contributions! Here's how you can help:
 - 🧪 **Add tests** for better reliability
 - 🎨 **Enhance UI/UX** to match GitHub Desktop even closer
 
-Visit our [GitHub repository](https://github.com/piotroszko/github-desktop) to get started!
+Visit our [GitHub repository](https://github.com/piotroszko/github-desktop-plus) to get started!
 
 ---
 
@@ -300,9 +300,9 @@ We're constantly improving! Here's what's on our roadmap:
 </p>
 
 <p align="center">
-  <a href="https://github.com/piotroszko/github-desktop">⭐ Star on GitHub</a> •
-  <a href="https://github.com/piotroszko/github-desktop/issues">🐛 Report Issues</a> •
-  <a href="https://github.com/piotroszko/github-desktop/discussions">💡 Discussions</a>
+  <a href="https://github.com/piotroszko/github-desktop-plus">⭐ Star on GitHub</a> •
+  <a href="https://github.com/piotroszko/github-desktop-plus/issues">🐛 Report Issues</a> •
+  <a href="https://github.com/piotroszko/github-desktop-plus/discussions">💡 Discussions</a>
 </p>
 
 ---
