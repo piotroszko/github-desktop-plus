@@ -568,6 +568,9 @@ body:not(.narrow) #noChanges { display: none !important; }
 }
 .menu-item:hover { background: var(--vscode-list-hoverBackground); }
 .menu-item.is-current { color: var(--vscode-descriptionForeground); }
+/* Second line of a menu row: supplementary detail (e.g. the address an account's
+   commits are authored with), muted so the row's label still reads first. */
+.menu-item .menu-sub { color: var(--vscode-descriptionForeground); font-size: 11px; }
 .menu-sep { height: 1px; margin: 5px 4px; background: var(--gd-border); }
 .menu-tabs { display: flex; gap: 4px; margin-bottom: 5px; }
 .menu-tab {
@@ -1881,7 +1884,9 @@ $("avatar").onclick = () => {
       const it = document.createElement("div");
       it.className = "menu-item" + (acc.selected ? " is-current" : "");
       it.innerHTML = '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">' +
-        esc(acc.login) + (flags.length ? "  (" + esc(flags.join(", ")) + ")" : "") + "</span>";
+        esc(acc.login) + (flags.length ? "  (" + esc(flags.join(", ")) + ")" : "") +
+        (acc.commitEmail ? '<span class="menu-sub">' + esc(acc.commitEmail) + "</span>" : "") +
+        "</span>";
       it.onclick = () => {
         closeMenu();
         if (!acc.selected) post("selectRepoAccount", { accountId: acc.id });

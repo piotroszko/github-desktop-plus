@@ -18,6 +18,27 @@ This guide explains how the extension enables multiple GitHub accounts and how t
 - Choose the target account from the quick pick list.
 - The **Accounts** view updates to mark the active account, and subsequent commands (clone, issue creation) use its credentials.
 
+## Commit Identity
+Each account records the profile GitHub reports for its token: display name,
+public email and numeric id. Whichever account a repository resolves to (its
+pinned account, else the active one) is the identity the extension passes to
+`git` for every object it creates in that repository — `commit`, `commitFiles`,
+amend, cherry-pick, revert, merge, conflict "continue", pull and annotated tags.
+The values arrive as `-c user.name=… -c user.email=…` on that one invocation:
+`.git/config` is never touched, so your own git configuration stays intact and
+your terminal keeps committing as whoever it always did.
+
+The address used is the account's public profile email. When none is public the
+extension falls back to GitHub's no-reply address,
+`<id>+<login>@users.noreply.github.com`, which GitHub still attributes to the
+account. `Select Account for Repository` and the History panel's account menu
+show the resulting `name <email>`, and a repository with no signed-in account
+leaves git's configured identity in place.
+
+Accounts imported before the extension recorded these details are filled in on
+the next activation — one API call per account, skipped once known, and retried
+later when GitHub is unreachable.
+
 ## Removing Accounts
 - Run `GitHub Desktop Plus: Sign Out` and select the account to remove.
 - The token is deleted from secret storage and the account disappears from the tree view.

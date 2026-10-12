@@ -27,7 +27,7 @@ export class CommitMessageService extends RepositoryScopedService {
   generate(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       try {
-        const git = this.git.plain(repo.localPath);
+        const git = this.git.local(repo);
         const staged = await git.raw(["diff", "--cached"]);
         const diff = staged.trim() ? staged : await git.raw(["diff", "HEAD"]);
         if (!diff.trim()) {

@@ -13,6 +13,15 @@ interface AccountQuickPickItem extends vscode.QuickPickItem {
   account: StoredAccount;
 }
 
+/** The profile fields the account list and commit identity are built from. */
+interface GitHubProfile {
+  login: string;
+  name?: string;
+  avatarUrl?: string;
+  email?: string;
+  githubId?: number;
+}
+
 export class AccountManager {
   private accounts: StoredAccount[] = [];
   private activeAccountId: string | undefined;
@@ -43,6 +52,7 @@ export class AccountManager {
     }
 
     await this.syncGitHubCliAccounts();
+    await this.backfillIdentities();
 
     if (this.accounts.length > 0 && !this.activeAccountId) {
       this.activeAccountId = this.accounts[0].id;
@@ -72,17 +82,14 @@ export class AccountManager {
       }
 
       const baseUrl = cli.host === "github.com" ? undefined : `https://${cli.host}`;
-      const octokitOptions: any = { auth: token };
-      if (baseUrl) {
-        octokitOptions.baseUrl = `${baseUrl.replace(/\/$/, "")}/api/v3`;
-      }
 
       try {
-        const octokit = new Octokit(octokitOptions);
-        const { data } = await octokit.rest.users.getAuthenticated();
+        const profile = await this.readProfile(token, baseUrl);
 
         const existing = this.accounts.find(
-          (acc) => acc.login === data.login && (acc.cliHost ?? "github.com") === cli.host,
+          (acc) =>
+            acc.login === profile.login &&
+            (acc.cliHost ?? "github.com") === cli.host,
         );
 
         if (existing) {
@@ -96,8 +103,7 @@ export class AccountManager {
             existing.cliHost = cli.host;
             changed = true;
           }
-          if (data.avatar_url && existing.avatarUrl !== data.avatar_url) {
-            existing.avatarUrl = data.avatar_url;
+          if (this.applyProfile(existing, profile)) {
             changed = true;
           }
         } else {
@@ -105,9 +111,11 @@ export class AccountManager {
           await this.secretStorage.store(tokenKey, token);
           this.accounts.push({
             id: randomUUID(),
-            login: data.login,
-            name: data.name ?? undefined,
-            avatarUrl: data.avatar_url ?? undefined,
+            login: profile.login,
+            name: profile.name,
+            avatarUrl: profile.avatarUrl,
+            email: profile.email,
+            githubId: profile.githubId,
             tokenKey,
             baseUrl,
             managedByCli: true,
@@ -127,6 +135,92 @@ export class AccountManager {
     }
 
     return changed;
+  }
+
+  /**
+   * Reads the token's GitHub profile: the display name, avatar and the commit
+   * identity details (public email, numeric id) the extension records.
+   */
+  private async readProfile(
+    token: string,
+    baseUrl?: string,
+  ): Promise<GitHubProfile> {
+    const octokit = new Octokit({
+      auth: token,
+      ...(baseUrl ? { baseUrl: `${baseUrl.replace(/\/$/, "")}/api/v3` } : {}),
+    });
+    const { data } = await octokit.rest.users.getAuthenticated();
+    return {
+      login: data.login,
+      name: data.name ?? undefined,
+      avatarUrl: data.avatar_url ?? undefined,
+      email: data.email ?? undefined,
+      githubId: data.id,
+    };
+  }
+
+  /**
+   * Copies a freshly read profile onto a stored account, reporting whether
+   * anything changed so the caller knows whether the change needs persisting.
+   */
+  private applyProfile(
+    account: StoredAccount,
+    profile: GitHubProfile,
+  ): boolean {
+    let changed = false;
+    if (account.name !== profile.name) {
+      account.name = profile.name;
+      changed = true;
+    }
+    if (account.avatarUrl !== profile.avatarUrl && profile.avatarUrl) {
+      account.avatarUrl = profile.avatarUrl;
+      changed = true;
+    }
+    if (account.email !== profile.email && profile.email) {
+      account.email = profile.email;
+      changed = true;
+    }
+    if (
+      account.githubId !== profile.githubId &&
+      profile.githubId !== undefined
+    ) {
+      account.githubId = profile.githubId;
+      changed = true;
+    }
+    return changed;
+  }
+
+  /**
+   * Fills in the profile of accounts stored before the extension recorded
+   * commit identities, so commits made for them are authored as the account
+   * instead of as the machine's global git identity. Only accounts that have
+   * neither an email nor a numeric id are queried, so this settles after one
+   * activation.
+   */
+  private async backfillIdentities(): Promise<void> {
+    let changed = false;
+
+    for (const account of this.accounts) {
+      if (account.email || account.githubId) {
+        continue;
+      }
+      const token = await this.secretStorage.get(account.tokenKey);
+      if (!token) {
+        continue;
+      }
+      try {
+        const profile = await this.readProfile(token, account.baseUrl);
+        if (this.applyProfile(account, profile)) {
+          changed = true;
+        }
+      } catch {
+        // Offline, or a token GitHub rejects — retried on the next activation.
+      }
+    }
+
+    if (changed) {
+      await this.persist();
+    }
   }
 
   getAccounts(): StoredAccount[] {
@@ -685,22 +779,18 @@ export class AccountManager {
     baseUrl?: string,
     cliHost?: string,
   ): Promise<StoredAccount | undefined> {
-    const octokitOptions: any = { auth: token };
-    if (baseUrl) {
-      octokitOptions.baseUrl = baseUrl.replace(/\/$/, "") + "/api/v3";
-    }
-
-    const octokit = new Octokit(octokitOptions);
     try {
-      const { data } = await octokit.rest.users.getAuthenticated();
-      const existing = this.accounts.find((acc) => acc.login === data.login);
+      const profile = await this.readProfile(token, baseUrl);
+      const existing = this.accounts.find((acc) => acc.login === profile.login);
       const tokenKey =
         existing?.tokenKey ?? `githubDesktop.token.${randomUUID()}`;
       const account: StoredAccount = existing ?? {
         id: randomUUID(),
-        login: data.login,
-        name: data.name ?? undefined,
-        avatarUrl: data.avatar_url ?? undefined,
+        login: profile.login,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+        email: profile.email,
+        githubId: profile.githubId,
         tokenKey,
         baseUrl,
         managedByCli: !!cliHost,
@@ -708,8 +798,7 @@ export class AccountManager {
       };
 
       if (existing) {
-        existing.name = data.name ?? undefined;
-        existing.avatarUrl = data.avatar_url ?? undefined;
+        this.applyProfile(existing, profile);
         if (baseUrl) existing.baseUrl = baseUrl;
         if (cliHost) {
           existing.managedByCli = true;

@@ -1,5 +1,5 @@
 import * as path from "path";
-import { StatusResult } from "simple-git";
+import { SimpleGit, StatusResult } from "simple-git";
 import { GitClientFactory } from "../../../core/git/git-authenticator";
 import { RepositoryContext } from "../ports";
 import {
@@ -81,7 +81,7 @@ export class RepositoryDataService {
       return null;
     }
 
-    const git = this.git.plain(repo.localPath);
+    const git = this.git.local(repo);
     const [status, log, branch, remotes] = await Promise.all([
       git.status(),
       // A repository with no commit yet has no log to read.
@@ -153,7 +153,7 @@ export class RepositoryDataService {
     }
 
     const raw = await this.git
-      .plain(repo.localPath)
+      .local(repo)
       .raw([
         "log",
         `--format=${COMMIT_LOG_FORMAT}`,
@@ -189,7 +189,7 @@ export class RepositoryDataService {
     if (!repo) {
       throw new Error("No repository open");
     }
-    const git = this.git.plain(repo.localPath);
+    const git = this.git.local(repo);
 
     const raw = await git.raw([
       "show",
@@ -271,15 +271,11 @@ export class RepositoryDataService {
 
   /* ---------------- internals ---------------- */
 
-  private detectOperation(
-    git: ReturnType<GitClientFactory["plain"]>,
-  ): Promise<InProgressOperation | null> {
+  private detectOperation(git: SimpleGit): Promise<InProgressOperation | null> {
     return detectInProgressOperation(git);
   }
 
-  private async hasParentCommit(
-    git: ReturnType<GitClientFactory["plain"]>,
-  ): Promise<boolean> {
+  private async hasParentCommit(git: SimpleGit): Promise<boolean> {
     try {
       await git.raw(["rev-parse", "--verify", "-q", "HEAD^"]);
       return true;
@@ -288,9 +284,7 @@ export class RepositoryDataService {
     }
   }
 
-  private async getStashes(
-    git: ReturnType<GitClientFactory["plain"]>,
-  ): Promise<StashEntry[]> {
+  private async getStashes(git: SimpleGit): Promise<StashEntry[]> {
     try {
       const raw = await git.raw(["stash", "list", "--format=%gd%x09%gs"]);
       return raw
@@ -341,7 +335,7 @@ export class RepositoryDataService {
    * `remotes/<remote>/<name>` refs — checking one out detaches HEAD.
    */
   private async listBranches(
-    git: ReturnType<GitClientFactory["plain"]>,
+    git: SimpleGit,
     all: string[],
     current: string | undefined,
   ): Promise<string[]> {
@@ -406,7 +400,7 @@ export class RepositoryDataService {
 
   /** One `for-each-ref` call instead of one `git log` per branch. */
   private async getBranchActivity(
-    git: ReturnType<GitClientFactory["plain"]>,
+    git: SimpleGit,
   ): Promise<Record<string, string>> {
     const activity: Record<string, string> = {};
     try {
@@ -428,7 +422,7 @@ export class RepositoryDataService {
   }
 
   private async getTagsForCommits(
-    git: ReturnType<GitClientFactory["plain"]>,
+    git: SimpleGit,
   ): Promise<Record<string, string[]>> {
     const map: Record<string, string[]> = {};
     const add = (hash: string, tag: string) => {
@@ -457,7 +451,7 @@ export class RepositoryDataService {
   }
 
   private async getRemoteStatus(
-    git: ReturnType<GitClientFactory["plain"]>,
+    git: SimpleGit,
     currentBranch: string | undefined,
     remotes: Array<{ name: string }>,
     baseBranch: string | undefined,

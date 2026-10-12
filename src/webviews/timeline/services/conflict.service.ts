@@ -1,4 +1,5 @@
 import { GitClientFactory } from "../../../core/git/git-authenticator";
+import { TrackedRepository } from "../../../shared/types";
 import { InProgressOperation } from "../interfaces/repository-snapshot";
 import { Notifier, RepositoryContext, Refresher } from "../ports";
 import { detectInProgressOperation } from "./git-operation-state";
@@ -39,7 +40,7 @@ export class ConflictService extends RepositoryScopedService {
       if (files.length === 0) {
         return;
       }
-      await this.git.plain(repo.localPath).add(files);
+      await this.git.local(repo).add(files);
       await this.refresher.refresh();
     });
   }
@@ -47,8 +48,8 @@ export class ConflictService extends RepositoryScopedService {
   /** Finishes the operation once every conflict is resolved. */
   continue(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
-      const op = await this.currentOperation(repo.localPath);
+      const git = this.git.local(repo);
+      const op = await this.currentOperation(repo);
       if (!op) {
         this.notifier.warn("No operation in progress");
         return;
@@ -71,20 +72,20 @@ export class ConflictService extends RepositoryScopedService {
   /** Rolls the operation back to its pre-conflict state. */
   abort(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const op = await this.currentOperation(repo.localPath);
+      const op = await this.currentOperation(repo);
       if (!op) {
         this.notifier.warn("No operation in progress");
         return;
       }
-      await this.git.plain(repo.localPath).raw(ABORT[op]);
+      await this.git.local(repo).raw(ABORT[op]);
       this.notifier.info(`${op} aborted`);
       await this.refresher.refresh();
     });
   }
 
   private currentOperation(
-    repoPath: string,
+    repo: TrackedRepository,
   ): Promise<InProgressOperation | null> {
-    return detectInProgressOperation(this.git.plain(repoPath));
+    return detectInProgressOperation(this.git.local(repo));
   }
 }

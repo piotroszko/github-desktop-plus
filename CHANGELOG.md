@@ -100,8 +100,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   button that opens an account menu for the current repository, marking the
   `active` and `selected` accounts and offering "Follow the active account".
   All three surfaces write the same per-repository default
+- The account picker and that avatar menu now show the address commits will be
+  authored with (`name <email>`), so the identity in effect for a repository is
+  visible before anything is committed
 
 ### Fixed
+- Commits made through the extension are now authored and committed as the
+  account the repository is set to use, instead of whatever the machine's global
+  git config held: `commit`, `commitFiles`, amend, cherry-pick, revert, merge,
+  conflict "continue", pull and `tag -a` run with that account's name and email
+  (passed as `-c user.name`/`-c user.email` per invocation, never written to
+  `.git/config`). Accounts now record their public profile email, falling back
+  to GitHub's `<id>+<login>@users.noreply.github.com` no-reply address when no
+  email is public, and accounts imported before this change are backfilled on
+  the next activation. A repository with no signed-in account still commits with
+  git's own configured identity
 - Ticked files now follow an *exception* list: everything is ticked by default,
   including files that appear after a draft was saved, and only the files you
   untick stay unticked (a plain toggle or "select all off" records them). A

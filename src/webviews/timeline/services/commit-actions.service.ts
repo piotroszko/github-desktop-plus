@@ -1,4 +1,5 @@
 import { GitClientFactory } from "../../../core/git/git-authenticator";
+import { TrackedRepository } from "../../../shared/types";
 import { toGitHubWebUrl } from "../../../shared/utils/github-url";
 import { Browser, Notifier, RepositoryContext, Refresher } from "../ports";
 import { RepositoryScopedService } from "./repository-scoped.service";
@@ -30,7 +31,7 @@ export class CommitActionsService extends RepositoryScopedService {
       if (!confirmed) {
         return;
       }
-      await this.git.plain(repo.localPath).reset(["--hard", hash]);
+      await this.git.local(repo).reset(["--hard", hash]);
       this.notifier.info(`Reset to ${shortHash(hash)}`);
       await this.refresher.refresh();
     });
@@ -38,7 +39,7 @@ export class CommitActionsService extends RepositoryScopedService {
 
   checkout(hash: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      await this.git.plain(repo.localPath).checkout(hash);
+      await this.git.local(repo).checkout(hash);
       this.notifier.info(`Checked out ${shortHash(hash)} (detached HEAD)`);
       await this.refresher.refresh();
     });
@@ -46,13 +47,11 @@ export class CommitActionsService extends RepositoryScopedService {
 
   revert(hash: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       try {
         await git.revert(hash, ["--no-edit"]);
       } catch (error) {
-        if (
-          await this.reportConflict(repo.localPath, `revert ${shortHash(hash)}`)
-        ) {
+        if (await this.reportConflict(repo, `revert ${shortHash(hash)}`)) {
           return;
         }
         throw error;
@@ -64,16 +63,11 @@ export class CommitActionsService extends RepositoryScopedService {
 
   cherryPick(hash: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       try {
         await git.raw(["cherry-pick", hash]);
       } catch (error) {
-        if (
-          await this.reportConflict(
-            repo.localPath,
-            `cherry-pick ${shortHash(hash)}`,
-          )
-        ) {
+        if (await this.reportConflict(repo, `cherry-pick ${shortHash(hash)}`)) {
           return;
         }
         throw error;
@@ -92,7 +86,7 @@ export class CommitActionsService extends RepositoryScopedService {
       if (!name) {
         return;
       }
-      await this.git.plain(repo.localPath).checkoutBranch(name, hash);
+      await this.git.local(repo).checkoutBranch(name, hash);
       this.notifier.info(`Created '${name}' from ${shortHash(hash)}`);
       await this.refresher.refresh();
     });
@@ -130,10 +124,10 @@ export class CommitActionsService extends RepositoryScopedService {
   }
 
   private async reportConflict(
-    repoPath: string,
+    repo: TrackedRepository,
     operation: string,
   ): Promise<boolean> {
-    const status = await this.git.plain(repoPath).status();
+    const status = await this.git.local(repo).status();
     if (status.conflicted.length === 0) {
       return false;
     }

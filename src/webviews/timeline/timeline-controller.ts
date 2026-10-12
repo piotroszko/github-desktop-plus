@@ -1,5 +1,8 @@
 import { AccountManager } from "../../core/accounts/account-manager";
-import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
+import {
+  accountCommitEmail,
+  resolveRepositoryAccount,
+} from "../../shared/utils/repo-account";
 import { GitClientFactory } from "../../core/git/git-authenticator";
 import { BusyTask, InboundMessage } from "./messages";
 import { RemoteStatus } from "./interfaces/repository-snapshot";
@@ -310,6 +313,7 @@ export class TimelineController implements Refresher {
         id: candidate.id,
         login: candidate.login,
         avatarUrl: candidate.avatarUrl,
+        commitEmail: accountCommitEmail(candidate),
         active: candidate.id === activeAccount?.id,
         selected: candidate.id === pinnedAccountId,
       })),

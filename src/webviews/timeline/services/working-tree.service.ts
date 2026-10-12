@@ -1,3 +1,4 @@
+import { SimpleGit } from "simple-git";
 import { GitClientFactory } from "../../../core/git/git-authenticator";
 import {
   Notifier,
@@ -44,7 +45,7 @@ export class WorkingTreeService extends RepositoryScopedService {
       if (!message.trim() || files.length === 0) {
         return;
       }
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       await git.add(files);
       await git.commit(message, files);
       this.channel.post({ command: "commitSucceeded" });
@@ -59,7 +60,7 @@ export class WorkingTreeService extends RepositoryScopedService {
       if (!message.trim()) {
         return;
       }
-      await this.git.plain(repo.localPath).commit(message);
+      await this.git.local(repo).commit(message);
       this.channel.post({ command: "commitSucceeded" });
       this.notifier.info("Commit created");
       await this.refresher.refresh();
@@ -75,7 +76,7 @@ export class WorkingTreeService extends RepositoryScopedService {
       if (!message.trim()) {
         return;
       }
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const pushed = await git
         .raw(["branch", "-r", "--contains", "HEAD"])
         .catch(() => "");
@@ -104,7 +105,7 @@ export class WorkingTreeService extends RepositoryScopedService {
    */
   undoLastCommit(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const summary = (
         await git.raw(["log", "-1", "--format=%s"]).catch(() => "")
       ).trim();
@@ -137,7 +138,7 @@ export class WorkingTreeService extends RepositoryScopedService {
       if (!confirmed) {
         return;
       }
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       await git
         .raw(["checkout", "HEAD", "--", ...files])
         .catch(() => undefined);
@@ -148,7 +149,7 @@ export class WorkingTreeService extends RepositoryScopedService {
 
   workingDiff(filePath: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       let diff = await git.raw(["diff", "HEAD", "--", filePath]);
       if (!diff.trim()) {
         diff = await git
@@ -164,13 +165,13 @@ export class WorkingTreeService extends RepositoryScopedService {
 
   private mutate(
     files: string[],
-    op: (git: ReturnType<GitClientFactory["plain"]>) => Promise<unknown>,
+    op: (git: SimpleGit) => Promise<unknown>,
   ): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       if (files.length === 0) {
         return;
       }
-      await op(this.git.plain(repo.localPath));
+      await op(this.git.local(repo));
       await this.refresher.refresh();
     });
   }

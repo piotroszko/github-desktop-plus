@@ -3,6 +3,17 @@ export interface StoredAccount {
   login: string;
   name?: string;
   avatarUrl?: string;
+  /**
+   * The account's public profile email, used as the address of commits made
+   * for this account. Absent when GitHub reports none (or for accounts
+   * imported before it was recorded).
+   */
+  email?: string;
+  /**
+   * GitHub's numeric user id, used to build the account's no-reply commit
+   * address when no public email is available.
+   */
+  githubId?: number;
   tokenKey: string;
   baseUrl?: string; // For GitHub Enterprise Server
   managedByCli?: boolean; // Token is kept in sync with the `gh` CLI's own auth state

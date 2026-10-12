@@ -101,7 +101,7 @@ export class PullRequestService extends RepositoryScopedService {
         );
         return;
       }
-      await this.git.plain(repo.localPath).checkout(local);
+      await this.git.local(repo).checkout(local);
       this.notifier.info(`Checked out PR #${prNumber} as ${local}`);
       await this.refresher.refresh();
     });

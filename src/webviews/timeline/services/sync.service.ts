@@ -1,5 +1,6 @@
 import { SimpleGit } from "simple-git";
 import { GitClientFactory } from "../../../core/git/git-authenticator";
+import { TrackedRepository } from "../../../shared/types";
 import {
   Notifier,
   RepositoryContext,
@@ -37,7 +38,7 @@ export class SyncService extends RepositoryScopedService {
       try {
         await this.git.withAuth(repo, (g) => g.pull());
       } catch (error) {
-        if (await this.reportIfConflict(repo.localPath, "pull")) {
+        if (await this.reportIfConflict(repo, "pull")) {
           return;
         }
         throw error;
@@ -49,7 +50,7 @@ export class SyncService extends RepositoryScopedService {
 
   push(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const { current, tracking } = await git.status();
       await this.git.withAuth(repo, (g) =>
         tracking ? g.push() : g.push(["-u", "origin", current ?? "HEAD"]),
@@ -66,7 +67,7 @@ export class SyncService extends RepositoryScopedService {
    */
   forcePush(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const { current, tracking } = await git.status();
       if (!tracking) {
         this.notifier.warn("This branch has no upstream — use Publish instead");
@@ -87,7 +88,7 @@ export class SyncService extends RepositoryScopedService {
 
   publish(): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const { current } = await git.branch();
       if (!current) {
         this.notifier.error("No branch to publish");
@@ -110,10 +111,10 @@ export class SyncService extends RepositoryScopedService {
    * returns `true`. Otherwise returns `false` and the caller rethrows.
    */
   private async reportIfConflict(
-    repoPath: string,
+    repo: TrackedRepository,
     operation: string,
   ): Promise<boolean> {
-    const status = await this.git.plain(repoPath).status();
+    const status = await this.git.local(repo).status();
     if (status.conflicted.length === 0) {
       return false;
     }

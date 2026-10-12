@@ -22,7 +22,7 @@ export class StashService extends RepositoryScopedService {
       if (message.trim()) {
         args.push("-m", message.trim());
       }
-      const out = await this.git.plain(repo.localPath).raw(args);
+      const out = await this.git.local(repo).raw(args);
       if (/No local changes/i.test(out)) {
         this.notifier.info("Nothing to stash");
         return;
@@ -35,7 +35,7 @@ export class StashService extends RepositoryScopedService {
   apply(index: number, drop: boolean): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
       await this.git
-        .plain(repo.localPath)
+        .local(repo)
         .raw(["stash", drop ? "pop" : "apply", `stash@{${index}}`]);
       this.notifier.info(drop ? "Stash popped" : "Stash applied");
       await this.refresher.refresh();
@@ -51,9 +51,7 @@ export class StashService extends RepositoryScopedService {
       if (!ok) {
         return;
       }
-      await this.git
-        .plain(repo.localPath)
-        .raw(["stash", "drop", `stash@{${index}}`]);
+      await this.git.local(repo).raw(["stash", "drop", `stash@{${index}}`]);
       this.notifier.info("Stash deleted");
       await this.refresher.refresh();
     });

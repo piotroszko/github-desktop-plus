@@ -14,7 +14,11 @@ import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider
 import { StoredAccount, TrackedRepository } from "./shared/types";
 import { getPrimaryRepository } from "./shared/utils/repo-selection";
 import { listBranchRefs } from "./shared/utils/git-branches";
-import { resolveRepositoryAccount } from "./shared/utils/repo-account";
+import {
+  accountCommitEmail,
+  resolveCommitIdentity,
+  resolveRepositoryAccount,
+} from "./shared/utils/repo-account";
 
 export async function activate(
   context: vscode.ExtensionContext,
@@ -535,16 +539,22 @@ async function selectRepositoryAccount(
     : undefined;
 
   const items: (vscode.QuickPickItem & { accountId?: string })[] = stored.map(
-    (account) => ({
-      label: account.login,
-      description: [
-        account.id === repo.accountId ? "selected" : undefined,
-        account.id === active?.id ? "active" : undefined,
-      ]
-        .filter(Boolean)
-        .join(" • "),
-      accountId: account.id,
-    }),
+    (account) => {
+      const email = accountCommitEmail(account);
+      return {
+        label: account.login,
+        description: [
+          account.id === repo.accountId ? "selected" : undefined,
+          account.id === active?.id ? "active" : undefined,
+        ]
+          .filter(Boolean)
+          .join(" • "),
+        detail: email
+          ? `commits as ${account.name?.trim() || account.login} <${email}>`
+          : "no commit email yet — commits use your git config",
+        accountId: account.id,
+      };
+    },
   );
   if (repo.accountId) {
     items.push({
@@ -568,12 +578,16 @@ async function selectRepositoryAccount(
   await applyRepositoryAccount(repositories, timeline, repo, picked.accountId);
 
   const effective = resolveRepositoryAccount(accounts, repo);
+  const identity = resolveCommitIdentity(accounts, repo);
+  const authoredAs = identity
+    ? ` — commits as ${identity.name} <${identity.email}>`
+    : "";
   vscode.window.showInformationMessage(
     picked.accountId
-      ? `${repo.owner}/${repo.name} now authenticates as ${effective?.login ?? picked.label}.`
+      ? `${repo.owner}/${repo.name} now authenticates as ${effective?.login ?? picked.label}${authoredAs}.`
       : `${repo.owner}/${repo.name} now follows the active account${
           active ? ` (${active.login})` : ""
-        }.`,
+        }${authoredAs}.`,
   );
 }
 

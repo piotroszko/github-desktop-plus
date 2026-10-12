@@ -74,6 +74,7 @@
 - **One-click account switching** directly from accounts panel
 - **Per-repository base branch** — compare against `develop` (or any branch) even when the branch tracks `prod`; sync state, pull-request links and the branch menu follow it, while push/pull keep using git's own upstream
 - **Per-repository account selection** — pin a repo to a specific account (right-click it in the Repositories panel, right-click an account in the Accounts panel, or click the avatar next to the commit summary) while other repos keep using the active account
+- **Commit authorship follows that selection** — commits, amends, cherry-picks, reverts, merges, conflict continues and pulls are authored and committed as the repository's account (`name <email>`), not as the machine's global git identity; the account picker shows the address that will be used
 - **Account-specific operations** with proper isolation
 - **Smart CLI account selection** with guided switching process
 
@@ -135,6 +136,12 @@
 - Pin an individual repository to one account (`Select Account for Repository`)
   and leave the rest following the active account; unassigned or signed-out
   selections fall back to the active account
+- The account you pick is also the identity commits are created with: the
+  extension passes that account's name and email to git for the commit you make
+  (using its public profile email, or GitHub's `<id>+<login>@users.noreply.github.com`
+  no-reply address when the email is private), so a personal repository keeps
+  committing as your personal account even when the machine's global git config
+  points somewhere else
 - Each account maintains its own repositories and settings
 
 ### **Visual Git Operations**

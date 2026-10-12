@@ -32,7 +32,7 @@ export class DiffService extends RepositoryScopedService {
 
   fileDiff(hash: string, filePath: string): Promise<void | undefined> {
     return this.withRepo(async (repo) => {
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       let diff = await git.raw(["show", hash, "--patch", "--", filePath]);
       if (!diff.trim()) {
         diff = await git.raw(["show", hash, "--", filePath]);

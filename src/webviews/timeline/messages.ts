@@ -160,6 +160,11 @@ export type OutboundMessage =
         id: string;
         login: string;
         avatarUrl?: string;
+        /**
+         * Address commits this account creates are authored with (`undefined`
+         * when nothing is known yet, in which case git's own config applies).
+         */
+        commitEmail?: string;
         /** The extension-wide active account. */
         active: boolean;
         /** The account currently pinned on the active repository. */

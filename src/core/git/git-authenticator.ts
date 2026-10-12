@@ -1,7 +1,10 @@
 import simpleGit, { SimpleGit } from "simple-git";
 import { AccountManager } from "../accounts/account-manager";
 import { TrackedRepository } from "../../shared/types";
-import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
+import {
+  resolveCommitIdentity,
+  resolveRepositoryAccount,
+} from "../../shared/utils/repo-account";
 
 /**
  * @description
@@ -12,12 +15,21 @@ import { resolveRepositoryAccount } from "../../shared/utils/repo-account";
  */
 export interface GitClientFactory {
   /**
-   * A plain client with no credentials attached. Use for read-only or purely
-   * local operations (status, log, checkout, merge, reset...).
+   * A client for local (offline) operations in `repo` — staging, committing,
+   * status, log, diff, checkout, merge, reset.
    *
-   * @param repoPath - Absolute path to the repository working directory
+   * Every command runs with `-c user.name=… -c user.email=…` for the account
+   * selected for the repository, so commits the extension creates are authored
+   * as the account the user picked instead of whatever the machine's global
+   * git config happens to hold. The values are passed per invocation and never
+   * written to `.git/config`. When the repository has no usable account, git's
+   * own configured identity is left in place.
+   *
+   * Carries no credentials: use {@link withAuth} for network operations.
+   *
+   * @param repo - The tracked repository the operation targets
    */
-  plain(repoPath: string): SimpleGit;
+  local(repo: TrackedRepository): SimpleGit;
 
   /**
    * Runs `fn` with a client whose network operations carry the token of the
@@ -28,8 +40,11 @@ export interface GitClientFactory {
    * git invocation. It is **never** written to `.git/config`, so there is
    * nothing to clean up and no shared state to race on.
    *
-   * If no account is available, `fn` still runs with a plain client (git may
-   * then fall back to a system credential helper).
+   * The client also carries the same commit identity as {@link local}, since
+   * `pull` and `tag -a` create objects that are attributed to it.
+   *
+   * If no account is available, `fn` still runs with a client that has no
+   * credentials (git may then fall back to a system credential helper).
    *
    * @param repo - The tracked repository the operation targets
    * @param fn - Callback receiving the (possibly authenticated) client
@@ -53,32 +68,43 @@ export interface GitClientFactory {
 export class AccountGitClientFactory implements GitClientFactory {
   constructor(private readonly accounts: AccountManager) {}
 
-  plain(repoPath: string): SimpleGit {
-    return simpleGit(repoPath);
+  local(repo: TrackedRepository): SimpleGit {
+    return simpleGit(repo.localPath, { config: this.identityConfig(repo) });
   }
 
   async withAuth<T>(
     repo: TrackedRepository,
     fn: (git: SimpleGit) => Promise<T>,
   ): Promise<T> {
+    const config = this.identityConfig(repo);
     const token = await this.resolveToken(repo);
-    if (!token) {
-      return fn(simpleGit(repo.localPath));
+    if (token) {
+      const header = `Authorization: Basic ${Buffer.from(
+        `x-access-token:${token}`,
+      ).toString("base64")}`;
+
+      // `-c http.<url>.extraheader=…` on every invocation. Not written to
+      // config, nothing to clean up. (We do NOT call `.env()` here — passing
+      // GIT_* vars through trips simple-git's unsafe-env guard;
+      // GIT_TERMINAL_PROMPT is set once at activation instead.)
+      config.push(`http.https://github.com/.extraheader=${header}`);
     }
 
-    const header = `Authorization: Basic ${Buffer.from(
-      `x-access-token:${token}`,
-    ).toString("base64")}`;
+    return fn(simpleGit(repo.localPath, { config }));
+  }
 
-    // `-c http.<url>.extraheader=…` on every invocation. Not written to config,
-    // nothing to clean up. (We do NOT call `.env()` here — passing GIT_* vars
-    // through trips simple-git's unsafe-env guard; GIT_TERMINAL_PROMPT is set
-    // once at activation instead.)
-    const git = simpleGit(repo.localPath, {
-      config: [`http.https://github.com/.extraheader=${header}`],
-    });
-
-    return fn(git);
+  /**
+   * `-c` arguments holding the `user.name`/`user.email` commits for `repo` are
+   * authored with — the repository's selected account, or the active one. Empty
+   * when no account (or no address for it) is known, leaving git's own
+   * configured identity in place.
+   */
+  private identityConfig(repo: TrackedRepository): string[] {
+    const identity = resolveCommitIdentity(this.accounts, repo);
+    if (!identity) {
+      return [];
+    }
+    return [`user.name=${identity.name}`, `user.email=${identity.email}`];
   }
 
   private async resolveToken(

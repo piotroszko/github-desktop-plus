@@ -33,7 +33,7 @@ export class BranchService extends RepositoryScopedService {
       if (!branch) {
         return;
       }
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       const [ahead, behind] = await Promise.all([
         logRange(git, `${branch}..HEAD`),
         logRange(git, `HEAD..${branch}`),
@@ -56,7 +56,7 @@ export class BranchService extends RepositoryScopedService {
       // HEAD. Fall back to the short name so git sets up local tracking.
       const remoteMatch = branch.match(/^remotes\/[^/]+\/(.+)$/);
       const target = remoteMatch ? remoteMatch[1] : branch;
-      await this.git.plain(repo.localPath).checkout(target);
+      await this.git.local(repo).checkout(target);
       this.notifier.info(`Switched to ${target}`);
       await this.refresher.refresh();
     });
@@ -67,7 +67,7 @@ export class BranchService extends RepositoryScopedService {
       if (!branchName) {
         return;
       }
-      await this.git.plain(repo.localPath).checkoutLocalBranch(branchName);
+      await this.git.local(repo).checkoutLocalBranch(branchName);
       this.notifier.info(`Created and switched to '${branchName}'`);
       await this.refresher.refresh();
     });
@@ -81,7 +81,7 @@ export class BranchService extends RepositoryScopedService {
       if (!branchName) {
         return;
       }
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       if (!bringChanges) {
         await git.stash(["push", "-m", `Stash before creating ${branchName}`]);
       }
@@ -124,7 +124,7 @@ export class BranchService extends RepositoryScopedService {
         );
       }
 
-      const git = this.git.plain(repo.localPath);
+      const git = this.git.local(repo);
       await git.checkout(toBranch);
       try {
         await git.merge([fromBranch]);
