@@ -40,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selected one
 
 ### Changed
+- The commit form (Summary / Description / Amend / Commit) and the
+  "Committed … · Undo" bar are now pinned to the bottom of the Changes panel,
+  GitHub Desktop style: only the file list scrolls, so the form no longer
+  scrolls out of view with long changesets. Section order is unchanged; a very
+  short panel falls back to scrolling the pane so the form stays reachable
 - Selecting another repository (repositories tree view, "Open Repository", or
   the timeline's repository picker) no longer switches the VS Code window: the
   choice is remembered in-extension for the session and the window keeps its

@@ -289,11 +289,11 @@ body.narrow #right { display: none; }
   background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
 }
 .tabpane { flex: 1 1 auto; min-height: 0; }
-/* Changes: one scroll for the whole pane; the commit box sticks to the bottom
-   but is still reachable by scrolling when the panel is very short. */
-/* Changes: one scroll for the whole pane — file list AND the commit form
-   flow together, nothing overlays. */
-#pane-changes { display: block; overflow-y: auto; overflow-x: hidden; }
+/* Changes: the file list is the only scrolling part; the commit form and the
+   "Committed …" bar stay pinned to the bottom of the panel, GitHub Desktop
+   style, whatever the list length. The pane itself only scrolls when it is
+   shorter than the form. */
+#pane-changes { display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
 #pane-history { display: flex; flex-direction: column; overflow: hidden; }
 
 /* ---- changed files ---- */
@@ -310,7 +310,7 @@ body.narrow #right { display: none; }
   cursor: pointer;
 }
 #allRow input, .file-row input[type=checkbox] { width: 13px; height: 13px; accent-color: var(--gd-accent); cursor: pointer; }
-#fileList { min-height: 0; }
+#fileList { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .file-row {
   display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px; cursor: pointer;
   white-space: nowrap; font-size: 12px;
@@ -336,9 +336,9 @@ body.narrow #right { display: none; }
 .file-row:hover .file-x { opacity: .6; }
 .file-x:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,.2)); }
 
-/* ---- commit box ---- */
+/* ---- commit box (pinned to the bottom of the panel) ---- */
 #commitBox {
-  flex: 0 0 auto;
+  flex: 0 0 auto; margin-top: auto;
   padding: 7px 8px; border-top: 1px solid var(--gd-border);
   display: flex; flex-direction: column; gap: 5px;
   background: var(--gd-chrome);
@@ -464,7 +464,7 @@ body.narrow #right { display: none; }
   flex: 1 1 auto; display: flex; flex-direction: column; align-items: center;
   justify-content: center; text-align: center; padding: 24px 20px; gap: 8px;
 }
-#noChanges { flex: 0 0 auto; padding: 28px 20px; }
+#noChanges { padding: 28px 20px; }
 /* The rich "No local changes" lives in the right pane; only show the left
    placeholder when the right pane is hidden (narrow / sidebar). */
 body:not(.narrow) #noChanges { display: none !important; }
