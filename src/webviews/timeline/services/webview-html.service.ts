@@ -702,7 +702,7 @@ const state = {
   selectedPath: null,
   selectedCommit: null,
   commitDetail: null,
-  expandedCommits: {},
+  expandedCommit: null,
   commitFiles: {},
   commitFilePath: null,
   filter: "",
@@ -1254,7 +1254,7 @@ function commitRow(c) {
   const avatarHtml = avatarUrl
     ? '<img class="commit-avatar" alt="" src="' + esc(avatarUrl) + '">'
     : "";
-  const expanded = !!state.expandedCommits[c.hash];
+  const expanded = state.expandedCommit === c.hash;
   row.className += expanded ? " is-expanded" : "";
   row.innerHTML =
     '<div class="commit-msg">' + tagsHtml +
@@ -1267,15 +1267,16 @@ function commitRow(c) {
     row.appendChild(commitFiles(c));
   }
   row.onclick = () => {
-    const opening = !state.expandedCommits[c.hash];
-    if (opening) state.expandedCommits[c.hash] = true;
-    else delete state.expandedCommits[c.hash];
-
-    state.selectedCommit = c.hash;
+    // History expands one commit at a time: opening a row collapses and
+    // deselects whatever was open; clicking the open row closes it.
+    const opening = state.expandedCommit !== c.hash;
+    state.expandedCommit = opening ? c.hash : null;
+    state.selectedCommit = opening ? c.hash : null;
     state.selectedPath = null;
     state.commitFilePath = null;
     renderHistory();
     if (!opening) {
+      updateLayout();
       return;
     }
     // The file list arrives with the commit detail and renders inline, so this
