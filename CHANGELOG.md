@@ -5,6 +5,14 @@ All notable changes to GitHub Desktop Plus are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.1] - 2026-10-13
+
+### Changes
+- fix: close history dropdowns when focus leaves the webview (16fa847)
+- feat: remove select account and branch buttons from repository list (5c4c3cf)
+- fix: expand one commit at a time in history (022e3e7)
+- feat: add author-email avatar fallback for local commits in timeline (f1809ae)
+
 ## [v2.2.0] - 2026-10-12
 
 ### Added
