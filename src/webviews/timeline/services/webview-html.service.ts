@@ -1584,6 +1584,11 @@ const menu = $("menu");
 let redrawBranchMenu = null;
 function closeMenu() { menu.hidden = true; menu.innerHTML = ""; document.removeEventListener("mousedown", onDocDown, true); redrawBranchMenu = null; }
 function onDocDown(e) { if (!menu.contains(e.target)) closeMenu(); }
+/* The view lives in an iframe: a click in the editor, in another view or in
+   another webview moves focus out of this document without a mousedown we can
+   see, so losing focus closes the menu too. */
+function onWindowBlur() { if (!menu.hidden) closeMenu(); }
+window.addEventListener("blur", onWindowBlur);
 /* Rows/labels: keeping the label in its own box lets long text ellipsize
    instead of widening the menu past the edge of the view. */
 function menuItem(label, onClick, className) {
