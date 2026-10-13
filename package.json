@@ -71,14 +71,12 @@
       {
         "command": "githubDesktopPlus.selectRepositoryAccount",
         "title": "Select Account for Repository",
-        "category": "GitHub Desktop Plus",
-        "icon": "$(account)"
+        "category": "GitHub Desktop Plus"
       },
       {
         "command": "githubDesktopPlus.selectBaseBranch",
         "title": "Select Base Branch for Repository",
-        "category": "GitHub Desktop Plus",
-        "icon": "$(git-compare)"
+        "category": "GitHub Desktop Plus"
       },
       {
         "command": "githubDesktopPlus.useAccountForRepository",
@@ -304,17 +302,7 @@
         {
           "command": "githubDesktopPlus.selectRepositoryAccount",
           "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
-          "group": "inline@1"
-        },
-        {
-          "command": "githubDesktopPlus.selectRepositoryAccount",
-          "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
           "group": "1_modification@1"
-        },
-        {
-          "command": "githubDesktopPlus.selectBaseBranch",
-          "when": "view == githubDesktopPlus.repositories && viewItem == githubDesktopPlus.repository",
-          "group": "inline@2"
         },
         {
           "command": "githubDesktopPlus.selectBaseBranch",
