@@ -160,6 +160,21 @@ export interface PullRequestSummary {
 }
 
 /**
+ * @description Avatar URLs resolved for a range of commits, indexed two ways so
+ * an unresolved commit can reuse a known author's avatar.
+ */
+export interface CommitAvatars {
+  /** Commit SHA → avatar URL, for commits GitHub resolved to an account. */
+  byHash: Record<string, string>;
+  /**
+   * Lowercased git author email → avatar URL, learned from those same commits.
+   * Lets a local-only commit (unknown to GitHub yet) borrow its author's
+   * established avatar instead of rendering bare.
+   */
+  byAuthorEmail: Record<string, string>;
+}
+
+/**
  * @description Read-only GitHub REST access scoped to the active repository.
  * Backed by the account manager's authenticated Octokit; kept behind a port so
  * services stay free of `@octokit/*` and are mockable in tests.
@@ -182,19 +197,18 @@ export interface GitHubApi {
   ): Promise<PullRequestSummary[]>;
 
   /**
-   * Maps commit SHA to the committer's GitHub avatar URL, for commits near
-   * the tip of `ref` (repo default branch if omitted) that GitHub can
-   * resolve to an account. Commits it can't match (unpushed, no linked
-   * account, etc.) are simply absent from the result.
+   * Resolves GitHub avatar URLs for commits near the tip of `ref` (repo
+   * default branch if omitted), keyed by SHA and by author email. Commits it
+   * can't match (unpushed, no linked account, etc.) are simply absent.
    *
-   * Never throws — returns `{}` when signed out, offline, or the repo has
-   * no GitHub remote, since this is a decorative enrichment, not a
+   * Never throws — returns empty maps when signed out, offline, or the repo
+   * has no GitHub remote, since this is a decorative enrichment, not a
    * blocking dependency of the history view.
    */
   getCommitAvatars(
     repo: TrackedRepository,
     ref?: string,
-  ): Promise<Record<string, string>>;
+  ): Promise<CommitAvatars>;
 }
 
 /**

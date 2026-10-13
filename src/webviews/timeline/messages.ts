@@ -180,7 +180,14 @@ export type OutboundMessage =
     }
   | {
       command: "updateCommitAvatars";
+      /** Commit SHA → avatar URL, for commits GitHub resolved. */
       avatars: Record<string, string>;
+      /**
+       * Lowercased author email → avatar URL. The webview falls back to this
+       * for commits with no SHA match — e.g. local commits GitHub cannot
+       * resolve yet — so they borrow their author's established avatar.
+       */
+      authorAvatars: Record<string, string>;
     }
   | {
       command: "loadMoreCommitsResponse";

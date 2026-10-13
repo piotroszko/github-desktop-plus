@@ -11,6 +11,7 @@ import { toGitHubWebUrl } from "../../../shared/utils/github-url";
 import { OutboundMessage } from "../messages";
 import {
   Browser,
+  CommitAvatars,
   GitHubApi,
   NativeDiff,
   Notifier,
@@ -261,17 +262,18 @@ export class AccountGitHubApi implements GitHubApi {
   async getCommitAvatars(
     repo: TrackedRepository,
     ref?: string,
-  ): Promise<Record<string, string>> {
+  ): Promise<CommitAvatars> {
+    const empty: CommitAvatars = { byHash: {}, byAuthorEmail: {} };
     if (!this.avatarsEnabled()) {
-      return {};
+      return empty;
     }
     const slug = gitHubSlug(repo);
     if (!slug) {
-      return {};
+      return empty;
     }
     const octokit = await this.accounts.getOctokit(repo.accountId);
     if (!octokit) {
-      return {};
+      return empty;
     }
     try {
       const { data } = await octokit.rest.repos.listCommits({
@@ -280,15 +282,24 @@ export class AccountGitHubApi implements GitHubApi {
         sha: ref || undefined,
         per_page: 100,
       });
-      const avatars: Record<string, string> = {};
+      const byHash: Record<string, string> = {};
+      const byAuthorEmail: Record<string, string> = {};
       for (const commit of data) {
-        if (commit.author?.avatar_url) {
-          avatars[commit.sha] = commit.author.avatar_url;
+        const avatarUrl = commit.author?.avatar_url;
+        if (!avatarUrl) {
+          continue;
+        }
+        // SHA for the exact commit; the author email additionally teaches us
+        // what avatar a local-only commit by the same author should borrow.
+        byHash[commit.sha] = avatarUrl;
+        const email = commit.commit?.author?.email;
+        if (email) {
+          byAuthorEmail[email.toLowerCase()] = avatarUrl;
         }
       }
-      return avatars;
+      return { byHash, byAuthorEmail };
     } catch {
-      return {};
+      return empty;
     }
   }
 }
