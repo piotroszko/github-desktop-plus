@@ -51,6 +51,7 @@ export class TimelineController implements Refresher {
     remoteBranch: null,
   };
   private commitAvatars: Record<string, string> = {};
+  private commitAuthorAvatars: Record<string, string> = {};
   private lastAvatarFetchKey: string | null = null;
 
   constructor(
@@ -330,10 +331,12 @@ export class TimelineController implements Refresher {
       offset: 0,
     });
 
-    if (Object.keys(this.commitAvatars).length) {
-      channel.post({ command: "updateCommitAvatars", avatars: this.commitAvatars });
-    }
-    this.refreshCommitAvatars(snapshot.currentBranch, snapshot.commits[0]?.hash);
+    this.broadcastCommitAvatars();
+    this.refreshCommitAvatars(
+      snapshot.currentBranch,
+      snapshot.commits[0]?.hash,
+      snapshot.remoteStatus,
+    );
     channel.post({
       command: "updateBranches",
       branches: snapshot.branches,
@@ -397,15 +400,19 @@ export class TimelineController implements Refresher {
 
   /**
    * Fetches GitHub avatar URLs for commits near the tip of `branch` and
-   * broadcasts them once resolved. Skipped when the branch/tip haven't
-   * changed since the last successful fetch, so a `git commit` or `pull`
-   * triggers one network call while unrelated refreshes (e.g. every file
-   * save) don't. Runs in the background — history renders immediately from
-   * local data regardless of how this resolves.
+   * broadcasts them once resolved. Skipped when the branch/tip/push-state
+   * haven't changed since the last successful fetch, so a `git commit`, `pull`
+   * or `push` triggers one network call while unrelated refreshes (e.g. every
+   * file save) don't. The push state is part of the key because a freshly
+   * committed commit is unknown to GitHub until it is pushed — without it, the
+   * post-push refresh would be skipped (same tip) and the avatar would only
+   * appear on the next reload. Runs in the background — history renders
+   * immediately from local data regardless of how this resolves.
    */
   private refreshCommitAvatars(
     branch: string | null,
     topHash: string | undefined,
+    remoteStatus: RemoteStatus,
   ): void {
     const repo = this.deps.repos.getPrimary();
     if (!repo) {
@@ -415,13 +422,23 @@ export class TimelineController implements Refresher {
       // Drop what is already on screen so turning the setting off takes effect
       // immediately, and clear the key so re-enabling fetches again.
       this.lastAvatarFetchKey = null;
-      if (Object.keys(this.commitAvatars).length) {
-        this.commitAvatars = {};
-        this.deps.channel.post({ command: "updateCommitAvatars", avatars: {} });
+      const hadAvatars =
+        Object.keys(this.commitAvatars).length > 0 ||
+        Object.keys(this.commitAuthorAvatars).length > 0;
+      this.commitAvatars = {};
+      this.commitAuthorAvatars = {};
+      if (hadAvatars) {
+        this.deps.channel.post({
+          command: "updateCommitAvatars",
+          avatars: {},
+          authorAvatars: {},
+        });
       }
       return;
     }
-    const key = `${repo.owner ?? ""}/${repo.name ?? ""}@${branch ?? ""}:${topHash ?? ""}`;
+    const key = `${repo.owner ?? ""}/${repo.name ?? ""}@${branch ?? ""}:${
+      topHash ?? ""
+    }:${remoteStatus.ahead}/${remoteStatus.behind}`;
     if (key === this.lastAvatarFetchKey) {
       return;
     }
@@ -429,22 +446,66 @@ export class TimelineController implements Refresher {
 
     void this.deps.githubApi
       .getCommitAvatars(repo, branch ?? undefined)
-      .then((avatars) => {
-        const hasNew = Object.entries(avatars).some(
-          ([hash, url]) => this.commitAvatars[hash] !== url,
-        );
+      .then(({ byHash, byAuthorEmail }) => {
+        const hasNew =
+          Object.entries(byHash).some(
+            ([hash, url]) => this.commitAvatars[hash] !== url,
+          ) ||
+          Object.entries(byAuthorEmail).some(
+            ([email, url]) => this.commitAuthorAvatars[email] !== url,
+          );
         if (!hasNew) {
           return;
         }
-        Object.assign(this.commitAvatars, avatars);
-        this.deps.channel.post({
-          command: "updateCommitAvatars",
-          avatars: this.commitAvatars,
-        });
+        Object.assign(this.commitAvatars, byHash);
+        Object.assign(this.commitAuthorAvatars, byAuthorEmail);
+        this.broadcastCommitAvatars();
       })
       .catch(() => {
         // Decorative enrichment only — offline/rate-limited/signed-out is fine.
       });
+  }
+
+  /**
+   * Pushes the avatar maps to the webview: SHA-keyed for commits GitHub has
+   * resolved, and email-keyed for the author fallback. The email index blends
+   * what GitHub taught us with the signed-in accounts' own avatars, so a commit
+   * made locally — not on GitHub yet — still shows its author's face instead of
+   * a bare row. A no-op when avatars are off: {@link refreshCommitAvatars}
+   * clears the screen in that case.
+   */
+  private broadcastCommitAvatars(): void {
+    if (this.deps.settings().ui.avatars === "none") {
+      return;
+    }
+    const authorAvatars = this.authorAvatarIndex();
+    if (
+      !Object.keys(this.commitAvatars).length &&
+      !Object.keys(authorAvatars).length
+    ) {
+      return;
+    }
+    this.deps.channel.post({
+      command: "updateCommitAvatars",
+      avatars: this.commitAvatars,
+      authorAvatars,
+    });
+  }
+
+  /**
+   * Email → avatar for the author fallback: what GitHub resolved, overlaid with
+   * the signed-in accounts' own avatars (so local commits are covered even
+   * before any fetch has run).
+   */
+  private authorAvatarIndex(): Record<string, string> {
+    const index: Record<string, string> = { ...this.commitAuthorAvatars };
+    for (const account of this.deps.accounts.getAccounts()) {
+      const email = accountCommitEmail(account);
+      if (email && account.avatarUrl) {
+        index[email.toLowerCase()] = account.avatarUrl;
+      }
+    }
+    return index;
   }
 
   private async loadMore(offset: number): Promise<void> {

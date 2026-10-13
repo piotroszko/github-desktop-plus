@@ -695,6 +695,7 @@ const state = {
   remote: null,
   tags: {},
   commitAvatars: {},
+  commitAuthorAvatars: {},
   diffMode: (window.__INITIAL__ && window.__INITIAL__.diffMode) || "auto",
   tab: "changes",
   selectedFiles: new Set(),
@@ -1246,7 +1247,10 @@ function commitRow(c) {
       tags.map((t) => '<span class="commit-tag">🏷 ' + esc(t) + "</span>").join("") +
       "</span>"
     : "";
-  const avatarUrl = state.commitAvatars && state.commitAvatars[c.hash];
+  const avatarUrl =
+    (state.commitAvatars && state.commitAvatars[c.hash]) ||
+    (state.commitAuthorAvatars && c.authorEmail &&
+      state.commitAuthorAvatars[c.authorEmail.toLowerCase()]);
   const avatarHtml = avatarUrl
     ? '<img class="commit-avatar" alt="" src="' + esc(avatarUrl) + '">'
     : "";
@@ -2061,6 +2065,7 @@ window.addEventListener("message", (ev) => {
       break;
     case "updateCommitAvatars":
       state.commitAvatars = msg.avatars || {};
+      state.commitAuthorAvatars = msg.authorAvatars || {};
       renderHistory();
       break;
     case "commitDetail": {
